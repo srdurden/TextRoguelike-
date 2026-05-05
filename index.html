@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>CUATRO PUERTAS</title>
+  <style>
+    :root {
+      --bg: #050505;
+      --panel: #111;
+      --panel-2: #151515;
+      --text: #f2f2f2;
+      --muted: #a9a9a9;
+      --line: #2a2a2a;
+      --danger: #5a1515;
+      --danger-text: #ffb5b5;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+    .app {
+      max-width: 560px;
+      margin: 0 auto;
+      min-height: 100dvh;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto auto;
+      gap: 8px;
+      padding: 10px 10px 14px;
+      background: var(--bg);
+    }
+
+    .titlebar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      padding: 8px;
+      font-size: 12px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .status {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      padding: 8px;
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+    .status strong { color: var(--text); }
+
+    .main {
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      padding: 10px;
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto auto auto 1fr;
+      gap: 8px;
+    }
+
+    .scene {
+      min-height: 86px;
+      font-size: 15px;
+      line-height: 1.5;
+      color: var(--text);
+      border: 1px dashed var(--line);
+      padding: 8px;
+    }
+
+    .combat-banner {
+      border: 1px solid #3a3a3a;
+      background: #1a1a1a;
+      padding: 7px;
+      font-size: 13px;
+      color: #d6d6d6;
+    }
+
+    .materials {
+      font-size: 13px;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      padding: 8px;
+      min-height: 56px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      align-content: start;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    button {
+      width: 100%;
+      border: 1px solid #3a3a3a;
+      background: #212121;
+      color: var(--text);
+      padding: 12px 10px;
+      font-size: 14px;
+      min-height: 48px;
+      text-align: left;
+      border-radius: 0;
+      letter-spacing: .2px;
+      cursor: pointer;
+    }
+
+    button:active { transform: translateY(1px); }
+    button.secondary { color: var(--muted); background: #191919; }
+    button.danger { border-color: #5d2525; background: #281313; color: #efc7c7; }
+    button.full { grid-column: 1 / -1; }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+
+    .log {
+      border: 1px solid var(--line);
+      background: #0f0f0f;
+      padding: 8px;
+      max-height: 140px;
+      overflow: auto;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #c5c5c5;
+    }
+
+    .log .hit { color: #ffb3b3; }
+    .log .good { color: #dcdcdc; }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.9);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      z-index: 20;
+    }
+    .overlay.open { display: flex; }
+
+    .panel {
+      width: 100%;
+      max-width: 520px;
+      max-height: 90dvh;
+      overflow: auto;
+      border: 1px solid var(--line);
+      background: #101010;
+      padding: 10px;
+      font-size: 13px;
+    }
+    .panel h2 { margin: 0 0 8px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+    .panel pre {
+      margin: 6px 0 10px;
+      border: 1px dashed var(--line);
+      background: #090909;
+      padding: 8px;
+      color: #d0d0d0;
+      font-size: 12px;
+      white-space: pre-wrap;
+    }
+    .panel .line { color: var(--muted); margin-bottom: 4px; }
+
+    .death {
+      border: 1px solid #632323;
+      background: var(--danger);
+      color: var(--danger-text);
+      padding: 8px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="titlebar">
+      <span>CUATRO PUERTAS</span>
+      <span id="depthTag">hab: 0</span>
+    </div>
+
+    <div class="status" id="status"></div>
+
+    <div class="main">
+      <div class="scene" id="scene"></div>
+      <div class="combat-banner" id="combatBanner" style="display:none"></div>
+      <div class="materials" id="materials"></div>
+      <div class="actions" id="actions"></div>
+    </div>
+
+    <div class="log" id="log"></div>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="panel" id="panel"></div>
+  </div>
+
+  <script>
+    (() => {
+      const SAVE_KEY = "cuatro_puertas_save_v1";
+
+      const roomLines = [
+        "la habitación huele a polvo húmedo.",
+        "una silla rota mira a la pared.",
+        "el yeso cae en silencio.",
+        "hay marcas de uñas en la puerta.",
+        "el aire sabe a óxido.",
+        "el silencio pesa demasiado.",
+        "la luz tiembla sin motivo.",
+        "el piso cruje bajo tus botas."
+      ];
+
+      const doorHints = [
+        { text: "no se oye nada al otro lado.", danger: -8 },
+        { text: "se oyen arañazos.", danger: 14 },
+        { text: "huele a humedad.", danger: 2 },
+        { text: "algo golpea despacio.", danger: 10 },
+        { text: "sale aire frío.", danger: 6 },
+        { text: "hay luz bajo la puerta.", danger: 3 },
+        { text: "hay sangre seca bajo la puerta.", danger: 16 },
+        { text: "algo se arrastra al otro lado.", danger: 12 }
+      ];
+
+      const directions = ["norte", "sur", "este", "oeste"];
+
+      const weaponsCatalog = {
+        manos: { name: "manos", type: "melee", damageMin: 1, damageMax: 2, maxDurability: null },
+        palo: { name: "palo", type: "melee", damageMin: 1, damageMax: 3, maxDurability: 4 },
+        "cuchillo improvisado": { name: "cuchillo improvisado", type: "melee", damageMin: 2, damageMax: 4, maxDurability: 6 },
+        "palo reforzado": { name: "palo reforzado", type: "melee", damageMin: 2, damageMax: 5, maxDurability: 7 },
+        "tubería reforzada": { name: "tubería reforzada", type: "melee", damageMin: 3, damageMax: 6, maxDurability: 10 },
+        pistola: { name: "pistola", type: "firearm", damageMin: 4, damageMax: 7, maxDurability: null },
+      };
+
+      const recipes = [
+        { id: "venda", name: "venda", ingredients: { tela: 1, alcohol: 1 }, make: (s) => s.player.items.venda++ },
+        { id: "cuchillo", name: "cuchillo improvisado", ingredients: { madera: 1, chatarra: 1 }, make: (s) => addWeapon(s, "cuchillo improvisado") },
+        { id: "palo-ref", name: "palo reforzado", ingredients: { madera: 1, tela: 1 }, make: (s) => addWeapon(s, "palo reforzado") },
+        { id: "tuberia", name: "tubería reforzada", ingredients: { chatarra: 2, tela: 1 }, make: (s) => addWeapon(s, "tubería reforzada") },
+        { id: "molotov", name: "cóctel incendiario", ingredients: { alcohol: 1, tela: 1 }, make: (s) => s.player.items.molotov++ },
+        { id: "trampa", name: "trampa rudimentaria", ingredients: { chatarra: 1, balas: 1 }, make: (s) => s.player.items.trampa++ },
+      ];
+
+      let gameState = loadGame() || newGameState();
+
+      function newGameState() {
+        return {
+          player: {
+            maxHp: 10,
+            hp: 10,
+            explored: 0,
+            materials: { madera: 0, tela: 0, chatarra: 0, alcohol: 0, balas: 0, medicina: 0 },
+            items: { venda: 0, molotov: 0, trampa: 0 },
+            weapons: [createWeapon("palo")],
+            equipped: "palo"
+          },
+          room: null,
+          inCombat: false,
+          enemy: null,
+          log: ["despiertas. hay cuatro puertas."],
+          mapTrail: [],
+          dead: false
+        };
+      }
+
+      function createWeapon(name) {
+        const base = weaponsCatalog[name];
+        return { name, durability: base.maxDurability };
+      }
+      function addWeapon(s, name) {
+        s.player.weapons.push(createWeapon(name));
+        log(`fabricas ${name}.`);
+      }
+
+      function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+      function pick(arr) { return arr[rand(0, arr.length - 1)]; }
+
+      function getEquippedWeapon() {
+        const eq = gameState.player.equipped;
+        if (!eq || eq === "manos") return null;
+        return gameState.player.weapons.find(w => w.name === eq) || null;
+      }
+
+      function safeWeaponName() {
+        const w = getEquippedWeapon();
+        return w ? `${w.name}${w.durability != null ? ` (${w.durability})` : ""}` : "manos";
+      }
+
+      function generateRoom(depth) {
+        const doorsCount = rand(1, 4);
+        const shuffled = [...directions].sort(() => Math.random() - 0.5);
+        const doorDirs = shuffled.slice(0, doorsCount);
+        const doors = doorDirs.map(d => {
+          const hint = pick(doorHints);
+          const blocked = Math.random() < 0.12;
+          return { dir: d, hint: hint.text, danger: hint.danger + rand(-3, 3), blocked };
+        });
+
+        const mat = { madera: 0, tela: 0, chatarra: 0, alcohol: 0, balas: 0, medicina: 0 };
+        const drops = rand(0, 2 + Math.floor(depth / 6));
+        const pool = ["madera", "tela", "chatarra", "alcohol", "balas", "medicina"];
+        for (let i = 0; i < drops; i++) {
+          const m = pick(pool);
+          mat[m] += (m === "balas" && Math.random() < 0.4) ? rand(1, 2) : 1;
+        }
+
+        if (depth > 8 && Math.random() < 0.1) {
+          mat.balas += 1;
+        }
+
+        const zombieChance = Math.min(0.3 + depth * 0.045, 0.9);
+        const hasZombie = Math.random() < zombieChance;
+
+        let foundWeapon = null;
+        if (depth > 7 && Math.random() < 0.09) foundWeapon = "palo reforzado";
+        if (depth > 11 && Math.random() < 0.08) foundWeapon = "tubería reforzada";
+        if (depth > 14 && Math.random() < 0.06) foundWeapon = "pistola";
+
+        return {
+          id: `R${Date.now()}_${Math.random().toString(16).slice(2, 7)}`,
+          description: pick(roomLines),
+          materials: mat,
+          doors,
+          hasZombie,
+          foundWeapon,
+          looted: false
+        };
+      }
+
+      function spawnEnemy(depth) {
+        const roll = Math.random();
+        let type = "lento";
+        if (depth >= 5 && roll > 0.55) type = "rápido";
+        if (depth >= 8 && roll > 0.72) type = "grande";
+        if (depth >= 11 && roll > 0.8) type = "podrido";
+        if (depth >= 14 && roll > 0.86) type = "horda pequeña";
+
+        const data = {
+          lento: { hp: rand(4, 6), dmgMin: 1, dmgMax: 2, label: "zombie lento" },
+          rápido: { hp: rand(3, 5), dmgMin: 2, dmgMax: 3, label: "zombie rápido", swift: true },
+          grande: { hp: rand(7, 10), dmgMin: 2, dmgMax: 4, label: "zombie grande" },
+          podrido: { hp: rand(5, 8), dmgMin: 1, dmgMax: 3, label: "zombie podrido", infect: true },
+          "horda pequeña": { hp: rand(10, 13), dmgMin: 2, dmgMax: 5, label: "horda pequeña" }
+        };
+
+        const e = data[type];
+        return { ...e, type, maxHp: e.hp };
+      }
+
+      function enterNextRoom() {
+        gameState.player.explored++;
+        const depth = gameState.player.explored;
+        gameState.room = generateRoom(depth);
+        gameState.mapTrail.push({
+          idx: depth,
+          zombie: gameState.room.hasZombie,
+          mat: materialCount(gameState.room.materials) > 0
+        });
+        gameState.mapTrail = gameState.mapTrail.slice(-12);
+
+        if (gameState.room.foundWeapon) {
+          addWeapon(gameState, gameState.room.foundWeapon);
+          log(`encuentras ${gameState.room.foundWeapon} abandonada.`);
+        }
+
+        if (gameState.room.hasZombie) {
+          gameState.inCombat = true;
+          gameState.enemy = spawnEnemy(depth);
+          log(`algo emerge: ${gameState.enemy.label}.`);
+          const first = determineFirstAttacker();
+          if (first === "enemy") enemyAttack("te sorprende en la puerta.");
+        }
+
+        saveGame();
+        render();
+      }
+
+      function determineFirstAttacker() {
+        const enemy = gameState.enemy;
+        const w = getEquippedWeapon();
+        if (!w) return "enemy";
+        if (enemy.swift && ["palo", "manos", "cuchillo improvisado"].includes(w.name)) return Math.random() < 0.75 ? "enemy" : "player";
+        return "player";
+      }
+
+      function enemyStateText(enemy) {
+        const r = enemy.hp / enemy.maxHp;
+        if (r > 0.72) return "el zombie sigue avanzando.";
+        if (r > 0.42) return "el zombie tambalea.";
+        return "el zombie casi cae.";
+      }
+
+      function playerAttack() {
+        if (!gameState.inCombat || gameState.dead) return;
+        const enemy = gameState.enemy;
+        const weapon = getEquippedWeapon();
+        let dmg = 0;
+
+        if (weapon && weapon.name === "pistola") {
+          if (gameState.player.materials.balas <= 0) {
+            log("el gatillo suena vacío.");
+            enemyAttack(); render(); saveGame(); return;
+          }
+          gameState.player.materials.balas--;
+          dmg = rand(weaponsCatalog.pistola.damageMin, weaponsCatalog.pistola.damageMax);
+          log(`disparas. daño ${dmg}.`);
+        } else if (weapon) {
+          const base = weaponsCatalog[weapon.name];
+          dmg = rand(base.damageMin, base.damageMax);
+          weapon.durability--;
+          log(`golpeas con ${weapon.name}. daño ${dmg}.`);
+          if (weapon.durability <= 0) {
+            gameState.player.weapons = gameState.player.weapons.filter(w => w !== weapon);
+            gameState.player.equipped = "manos";
+            log(`${weapon.name} se rompe.`);
+          }
+        } else {
+          dmg = rand(weaponsCatalog.manos.damageMin, weaponsCatalog.manos.damageMax);
+          log(`golpeas con las manos. daño ${dmg}.`);
+        }
+
+        enemy.hp -= dmg;
+        if (enemy.hp <= 0) {
+          gameState.inCombat = false;
+          gameState.enemy = null;
+          gameState.room.hasZombie = false;
+          log("el cuerpo cae. silencio.");
+        } else {
+          log(enemyStateText(enemy));
+          enemyAttack();
+        }
+        saveGame();
+        render();
+      }
+
+      function enemyAttack(prefix = "") {
+        const enemy = gameState.enemy;
+        if (!enemy || gameState.dead) return;
+        let dmg = rand(enemy.dmgMin, enemy.dmgMax);
+        if (enemy.infect && Math.random() < 0.3) {
+          dmg += 1;
+          log("la mordida quema. infección.");
+        }
+        if (prefix) log(prefix);
+        gameState.player.hp -= dmg;
+        log(`recibes ${dmg} de daño.`, true);
+        if (gameState.player.hp <= 0) {
+          gameState.player.hp = 0;
+          gameState.dead = true;
+          gameState.inCombat = false;
+          log("caes al suelo. todo termina.", true);
+        }
+      }
+
+      function attemptFlee() {
+        if (!gameState.inCombat) return;
+        const chance = 0.45 - Math.min(gameState.player.explored * 0.01, 0.15);
+        if (Math.random() < chance) {
+          log("retrocedes y cierras la puerta.");
+          gameState.inCombat = false;
+          gameState.enemy = null;
+          gameState.room.hasZombie = false;
+        } else {
+          log("tropiezas al huir.");
+          enemyAttack();
+        }
+        saveGame();
+        render();
+      }
+
+      function useMedicine() {
+        if (gameState.dead) return;
+        if (gameState.player.materials.medicina > 0) {
+          gameState.player.materials.medicina--;
+          heal(4, "usas medicina.");
+        } else if (gameState.player.items.venda > 0) {
+          gameState.player.items.venda--;
+          heal(2, "ajustas una venda.");
+        } else {
+          log("no tienes con qué curarte.");
+        }
+        if (gameState.inCombat && !gameState.dead) enemyAttack("te expones al curarte.");
+        saveGame();
+        render();
+      }
+
+      function useMolotov() {
+        if (!gameState.inCombat || gameState.player.items.molotov <= 0) return;
+        gameState.player.items.molotov--;
+        const dmg = rand(6, 9);
+        gameState.enemy.hp -= dmg;
+        log(`lanzas cóctel incendiario. daño ${dmg}.`);
+        if (gameState.enemy.hp <= 0) {
+          gameState.inCombat = false;
+          gameState.enemy = null;
+          gameState.room.hasZombie = false;
+          log("ardió y cayó.");
+        } else {
+          enemyAttack("las llamas no bastan.");
+        }
+        saveGame();
+        render();
+      }
+
+      function heal(n, txt) {
+        const p = gameState.player;
+        p.hp = Math.min(p.maxHp, p.hp + n);
+        log(`${txt} +${n} vida.`);
+      }
+
+      function collectMaterials() {
+        if (!gameState.room || gameState.room.looted) return;
+        const roomMat = gameState.room.materials;
+        let any = false;
+        Object.keys(roomMat).forEach(k => {
+          if (roomMat[k] > 0) {
+            gameState.player.materials[k] += roomMat[k];
+            any = true;
+          }
+        });
+        gameState.room.looted = true;
+        if (any) log(`recoges: ${materialText(roomMat)}.`);
+        else log("no encuentras nada útil.");
+        saveGame();
+        render();
+      }
+
+      function moveDoor(dir) {
+        if (gameState.dead || gameState.inCombat) return;
+        const door = gameState.room.doors.find(d => d.dir === dir);
+        if (!door || door.blocked) return;
+        if (gameState.player.items.trampa > 0 && Math.random() < 0.2) {
+          gameState.player.items.trampa--;
+          log("dejas una trampa al pasar.");
+        }
+        enterNextRoom();
+      }
+
+      function materialCount(m) { return Object.values(m).reduce((a, b) => a + b, 0); }
+
+      function materialText(m) {
+        return Object.entries(m).filter(([,v]) => v > 0).map(([k,v]) => `${k} x${v}`).join(", ");
+      }
+
+      function craft(recipeId) {
+        const recipe = recipes.find(r => r.id === recipeId);
+        if (!recipe) return;
+        const has = Object.entries(recipe.ingredients).every(([k,v]) => gameState.player.materials[k] >= v);
+        if (!has) return;
+        Object.entries(recipe.ingredients).forEach(([k,v]) => gameState.player.materials[k] -= v);
+        recipe.make(gameState);
+        saveGame();
+        render();
+      }
+
+      function equipWeapon(name) {
+        if (name === "manos" || gameState.player.weapons.find(w => w.name === name)) {
+          gameState.player.equipped = name;
+          log(`equipas ${name}.`);
+          saveGame();
+          render();
+        }
+      }
+
+      function log(msg, hit = false) {
+        gameState.log.unshift({ text: msg, hit });
+        gameState.log = gameState.log.slice(0, 28);
+      }
+
+      function saveGame() { localStorage.setItem(SAVE_KEY, JSON.stringify(gameState)); }
+      function loadGame() {
+        try {
+          const raw = localStorage.getItem(SAVE_KEY);
+          if (!raw) return null;
+          return JSON.parse(raw);
+        } catch {
+          return null;
+        }
+      }
+
+      function resetGame() {
+        gameState = newGameState();
+        localStorage.removeItem(SAVE_KEY);
+        enterNextRoom();
+      }
+
+      function openPanel(mode) {
+        const overlay = document.getElementById("overlay");
+        const panel = document.getElementById("panel");
+
+        if (mode === "inventory") {
+          const weapons = gameState.player.weapons.map(w => `- ${w.name}${w.durability != null ? ` (${w.durability})` : ""}`).join("\n") || "- ninguna";
+          const mats = materialText(gameState.player.materials) || "vacío";
+          panel.innerHTML = `
+            <h2>inventario</h2>
+            <div class="line">arma equipada: <strong>${safeWeaponName()}</strong></div>
+            <div class="line">materiales: ${mats}</div>
+            <div class="line">vendas: ${gameState.player.items.venda} | medicina: ${gameState.player.materials.medicina}</div>
+            <div class="line">molotov: ${gameState.player.items.molotov} | trampa: ${gameState.player.items.trampa}</div>
+            <pre>armas\n${weapons}</pre>
+            <div class="actions" id="invActions"></div>
+            <button class="full secondary" id="closePanel">cerrar</button>
+          `;
+          const invActions = panel.querySelector("#invActions");
+          const btnHands = document.createElement("button");
+          btnHands.textContent = "equipar manos";
+          btnHands.onclick = () => equipWeapon("manos");
+          invActions.appendChild(btnHands);
+          gameState.player.weapons.forEach(w => {
+            const b = document.createElement("button");
+            b.textContent = `equipar ${w.name}`;
+            b.onclick = () => equipWeapon(w.name);
+            invActions.appendChild(b);
+          });
+        }
+
+        if (mode === "craft") {
+          const craftable = recipes.filter(r => Object.entries(r.ingredients).every(([k,v]) => gameState.player.materials[k] >= v));
+          panel.innerHTML = `<h2>fabricación</h2><div class="actions" id="craftActions"></div><button class="full secondary" id="closePanel">cerrar</button>`;
+          const c = panel.querySelector("#craftActions");
+          if (!craftable.length) {
+            const p = document.createElement("div");
+            p.className = "line";
+            p.textContent = "no puedes fabricar nada.";
+            c.appendChild(p);
+          } else {
+            craftable.forEach(r => {
+              const b = document.createElement("button");
+              b.textContent = `${r.name} ← ${materialText(r.ingredients)}`;
+              b.onclick = () => craft(r.id);
+              c.appendChild(b);
+            });
+          }
+        }
+
+        if (mode === "map") {
+          const lines = gameState.mapTrail.map(t => {
+            const marks = `${t.zombie ? "z" : "S"}${t.mat ? "+" : "-"}`;
+            return `[${String(t.idx).padStart(2, "0")}] ${marks}`;
+          }).join("\n");
+          panel.innerHTML = `
+            <h2>mapa</h2>
+            <pre>--N--\n| ? |\nW @ E\n| ${gameState.room?.hasZombie ? "z" : "+"} |\n--S--\n\n@ jugador\nz zombie\n+ materiales\nS sala estable\n? desconocido\n\nrastro\n${lines || "sin datos"}</pre>
+            <button class="full secondary" id="closePanel">cerrar</button>
+          `;
+        }
+
+        if (mode === "death") {
+          panel.innerHTML = `
+            <h2>fin</h2>
+            <div class="death">moriste en la habitación ${gameState.player.explored}.</div>
+            <button class="full danger" id="restartBtn">volver a empezar</button>
+          `;
+          panel.querySelector("#restartBtn").onclick = resetGame;
+        }
+
+        overlay.classList.add("open");
+        const close = panel.querySelector("#closePanel");
+        if (close) close.onclick = () => overlay.classList.remove("open");
+      }
+
+      function render() {
+        const s = gameState;
+        document.getElementById("depthTag").textContent = `hab: ${s.player.explored}`;
+
+        document.getElementById("status").innerHTML = `
+          <strong>vida:</strong> ${s.player.hp}/${s.player.maxHp}
+          &nbsp;|&nbsp; <strong>arma:</strong> ${safeWeaponName()}
+          &nbsp;|&nbsp; <strong>balas:</strong> ${s.player.materials.balas}
+          <br>
+          <strong>exploradas:</strong> ${s.player.explored}
+          &nbsp;|&nbsp; <strong>vendas:</strong> ${s.player.items.venda}
+          &nbsp;|&nbsp; <strong>medicina:</strong> ${s.player.materials.medicina}
+        `;
+
+        const scene = document.getElementById("scene");
+        const mat = document.getElementById("materials");
+        const actions = document.getElementById("actions");
+        const banner = document.getElementById("combatBanner");
+
+        if (s.dead) {
+          scene.textContent = "todo se vuelve negro.";
+          mat.textContent = "";
+          banner.style.display = "none";
+          actions.innerHTML = "";
+          const b = document.createElement("button");
+          b.className = "full danger";
+          b.textContent = "volver a empezar";
+          b.onclick = resetGame;
+          actions.appendChild(b);
+          openPanel("death");
+          saveGame();
+          return;
+        }
+
+        scene.textContent = s.room?.description || "las paredes esperan.";
+
+        if (s.inCombat && s.enemy) {
+          banner.style.display = "block";
+          banner.textContent = `combate: ${s.enemy.label}. ${enemyStateText(s.enemy)}`;
+          mat.textContent = "el suelo vibra bajo los pasos muertos.";
+
+          actions.innerHTML = "";
+          const atk = mkBtn("atacar", playerAttack);
+          const flee = mkBtn("huir", attemptFlee, "secondary");
+          const med = mkBtn("usar medicina/venda", useMedicine, "secondary");
+          actions.append(atk, flee, med);
+
+          if (s.player.items.molotov > 0) actions.appendChild(mkBtn("lanzar cóctel incendiario", useMolotov));
+          actions.appendChild(mkBtn("inventario", () => openPanel("inventory"), "secondary full"));
+        } else {
+          banner.style.display = "none";
+          const roomMatText = materialText(s.room.materials);
+          mat.textContent = s.room.looted ? "ya revisaste esta habitación." : (roomMatText ? `ves: ${roomMatText}.` : "no ves materiales útiles.");
+
+          actions.innerHTML = "";
+          if (!s.room.looted) actions.appendChild(mkBtn("recoger materiales", collectMaterials));
+          if (s.player.materials.medicina > 0 || s.player.items.venda > 0) actions.appendChild(mkBtn("usar medicina/venda", useMedicine, "secondary"));
+
+          actions.appendChild(mkBtn("inventario", () => openPanel("inventory"), "secondary"));
+          const canCraft = recipes.some(r => Object.entries(r.ingredients).every(([k,v]) => s.player.materials[k] >= v));
+          if (canCraft) actions.appendChild(mkBtn("fabricar", () => openPanel("craft"), "secondary"));
+          actions.appendChild(mkBtn("mapa", () => openPanel("map"), "secondary"));
+          actions.appendChild(mkBtn("nueva partida", resetGame, "danger"));
+
+          s.room.doors.forEach(d => {
+            const label = `[${cap(d.dir)}] ${d.hint}${d.blocked ? " (bloqueada)" : ""}`;
+            const btn = mkBtn(label, () => moveDoor(d.dir), d.blocked ? "secondary" : "");
+            btn.disabled = d.blocked;
+            actions.appendChild(btn);
+          });
+        }
+
+        const logEl = document.getElementById("log");
+        logEl.innerHTML = s.log.map(l => `<div class="${l.hit ? "hit" : "good"}">• ${l.text || l}</div>`).join("");
+      }
+
+      function mkBtn(text, onClick, classes = "") {
+        const b = document.createElement("button");
+        b.textContent = text;
+        b.className = classes;
+        b.onclick = onClick;
+        return b;
+      }
+      function cap(str) { return str.charAt(0).toUpperCase() + str.slice(1); }
+
+      document.getElementById("overlay").addEventListener("click", (e) => {
+        if (e.target.id === "overlay") e.currentTarget.classList.remove("open");
+      });
+
+      if (!gameState.room) enterNextRoom();
+      else render();
+    })();
+  </script>
+</body>
+</html>
