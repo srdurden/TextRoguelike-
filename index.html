@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ZOMBIES EN LA MANSIÓN DEL MAL GUSTO</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #fff; color: #111; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .app { max-width: 520px; margin: 0 auto; padding: 24px 20px 48px; }
+    .title { font-size: clamp(28px, 7vw, 36px); font-weight: 900; letter-spacing: -0.03em; margin: 0; line-height: 1.03; }
+    .subtitle { margin-top: 8px; font-size: 16px; font-weight: 700; color: #333; }
+    .line { border: 0; border-top: 1px solid #ddd; margin: 18px 0; }
+    .section { margin-top: 24px; }
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+    .stat { border-top: 1px solid #ddd; padding-top: 8px; }
+    .stat-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.09em; color: #444; }
+    .stat-value { font-size: 18px; font-weight: 900; margin-top: 2px; }
+    .big-line { font-size: clamp(22px, 6vw, 28px); line-height: 1.08; font-weight: 900; margin: 0; }
+    .body-copy { margin-top: 10px; font-size: 17px; line-height: 1.48; font-weight: 700; color: #222; }
+    .mini { font-size: 15px; font-weight: 700; color: #333; margin-top: 8px; }
+    .button-stack { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+    button { width: 100%; min-height: 48px; padding: 15px 16px; border: 1.5px solid #111; border-radius: 14px; background: #fff; color: #111; font-size: 16px; font-weight: 800; text-align: left; }
+    button:active { transform: scale(.99); }
+    .secondary { border-color: #666; color: #333; }
+    .danger { border-color: #111; font-weight: 900; }
+    .caps { text-transform: uppercase; letter-spacing: 0.08em; font-size: 12px; font-weight: 900; color: #444; }
+    .block { border-top: 1px solid #ddd; padding-top: 12px; margin-top: 12px; }
+    .log { border-top: 1px solid #ddd; margin-top: 28px; padding-top: 10px; }
+    .log-item { font-size: 14px; line-height: 1.4; font-weight: 700; color: #333; padding: 4px 0; }
+  </style>
+</head>
+<body>
+  <main class="app" id="app"></main>
+  <script>
+    const STORAGE_KEY = 'malgusto_save_v1';
+    const initialWeapon = { name: 'Linterna con complejo de bate', bonus: 1, value: 0, desc: 'Alumbra poco, amenaza mucho.', upgrades: 0, id: 'linterna' };
+    const weapons = [
+      { id:'sarten', name:'Sartén de hierro dramática', bonus:2, value:300, desc:'Contra zombies cocineros o domésticos, +1 extra.' },
+      { id:'billar', name:'Palo de billar con pasado oscuro', bonus:2, value:350, desc:'Si sacas 6, ganas +1 botín extra (100).' },
+      { id:'motosierra', name:'Motosierra sin presupuesto', bonus:4, value:700, desc:'Cada ataque sube Rencor +1.' },
+      { id:'escopeta', name:'Escopeta de atrezo sorprendentemente real', bonus:5, value:900, desc:'Si Pánico >=6, bonus reducido a +2.' },
+      { id:'candelabro', name:'Candelabro de señora rica', bonus:3, value:500, desc:'Baja Pánico 1 al ganar contra zombies elegantes.' },
+      { id:'katana', name:'Katana comprada en gasolinera', bonus:4, value:800, desc:'Con dado 1 pierdes 100 botín por vergüenza.' },
+      { id:'aspiradora', name:'Aspiradora industrial poseída', bonus:3, value:600, desc:'Contra zombies pequeños, +2.' },
+    ];
+    const oddities = [
+      { id:'chandal', name:'Chándal táctico', bonus:1, value:300, effect:'Huir +1.' },
+      { id:'gafas', name:'Gafas de sol de noche', bonus:1, value:400, effect:'Reduce Pánico por trampas en 1.' },
+      { id:'manual', name:'Manual de supervivencia escrito por un optimista', bonus:0, value:500, effect:'Repite una tirada cada 4 turnos.' },
+      { id:'botas', name:'Botas de correr dentro de casa', bonus:1, value:500, effect:'Huir con 4-6.' },
+      { id:'amuleto', name:'Amuleto de plot armor barato', bonus:0, value:900, effect:'Evita una muerte y se rompe.' },
+      { id:'cinta', name:'Cinta americana multiusos', bonus:1, value:400, effect:'Vendes arma vieja por 50% extra.' },
+      { id:'walkie', name:'Walkie-talkie sin nadie al otro lado', bonus:0, value:250, effect:'20% de bajar Pánico al iniciar combate.' },
+    ];
+    const consumables = [
+      { id:'energetica', name:'Bebida energética sospechosa', desc:'+3 al próximo ataque; Pánico +1.' },
+      { id:'spray', name:'Spray anti-zombie, probablemente ambientador', desc:'-2 a fuerza zombie en este combate.' },
+      { id:'llave', name:'Llave oxidada', desc:'Cancela una trampa.' },
+      { id:'barrita', name:'Barrita de proteína caducada', desc:'Recupera 1 vida; 20% Pánico +1.' },
+      { id:'guion', name:'Guion alternativo', desc:'Repite evento actual (no jefes).' },
+      { id:'foto', name:'Foto familiar que no es tuya', desc:'Pánico -2.' },
+      { id:'bengala', name:'Bengala de interior', desc:'+2 combate actual, Rencor +1.' },
+      { id:'cupon', name:'Cupón de ferretería', desc:'Paga 300 botín y +1 temporal próximo combate.' },
+    ];
+    const rooms = ['Vestíbulo','Cocina','Biblioteca','Sótano','Pasillo Infinito','Invernadero','Salón de Baile','Baño Imposible','Garaje','Sala de Retratos','Capilla Privada'];
+    const zoneText = {
+      'Vestíbulo':'Demasiado grande para una casa, demasiado húmedo para un museo.','Cocina':'Las cacerolas te juzgan en silencio.','Biblioteca':'Miles de libros. Cero finales felices.','Sótano':'Humedad, tubos y decisiones malas.','Pasillo Infinito':'Cada puerta parece una repetición barata.','Invernadero':'Todo crece, incluso el mal gusto.','Salón de Baile':'El suelo pide coreografía y pánico.','Baño Imposible':'Tiene tres lavabos y ninguna lógica.','Garaje':'Huele a aceite y a excusas.','Sala de Retratos':'Nadie posa así por voluntad propia.','Capilla Privada':'Un silencio elegante y sospechoso.','Puerta Principal':'Ahí fuera existe la libertad. En teoría.'
+    };
+    const zdefs=[{n:'Zombi Becario',b:1,l:150,e:'Lleva una acreditación mordida y muchas ganas de aprender a morder.',t:'becario'},
+    {n:'Zombi Influencer de Nicho',b:2,l:200,e:'Intenta retransmitir tu persecución, pero no tiene cobertura desde 2009.',t:'influencer'},
+    {n:'Zombi Mayordomo Pasivo-Agresivo',b:3,l:300,e:'Te ofrece té. El té se mueve.',t:'domestico'},
+    {n:'Zombi Abuela con Andador Turbo',b:4,l:350,e:'No corre. Optimiza el desplazamiento.',t:'abuelaturbo'},
+    {n:'Zombi Fontanero del Sótano',b:5,l:450,e:'Huele a humedad, cobre y decisiones municipales.',t:'fontanero'},
+    {n:'Zombi Hipster de Ultramar',b:4,l:400,e:'Ya mordía cerebros antes de que fuera mainstream.',t:'hipster'},
+    {n:'Zombi Payaso de Comunión',b:6,l:600,e:'No sabes qué es peor: que sea zombie o que siga haciendo globos.',t:'payaso'},
+    {n:'Zombi Chef de Alta Necrococina',b:5,l:500,e:'Te describe durante cinco minutos una espuma de cerebro.',t:'chef'},
+    {n:'Zombi Niño del Pasillo que No Debería Correr Tanto',b:7,l:700,e:'Aparece al fondo del pasillo. Luego al lado.',t:'nino'},
+    {n:'Zombi Crítico de Cine',b:6,l:650,e:'Dice que tu arco de personaje es flojo.',t:'critico'},
+    {n:'Zombi Jardinero del Invernadero',b:3,l:300,e:'Viene cubierto de tierra, hojas y rencores botánicos.',t:'jardinero'},
+    {n:'Zombi Primo que Nadie Invitó',b:2,l:250,e:'No vive aquí, pero ha venido igual.',t:'primo'},
+    {n:'Zombi de Gimnasio',b:5,l:550,e:'No tiene pulso, pero sí rutina de pierna.',t:'gym'},
+    {n:'Zombi Bibliotecario',b:4,l:450,e:'Te manda callar mientras se le cae una oreja.',t:'biblio'},
+    {n:'Zombi Inspector de Hacienda',b:8,l:900,e:'Ni vivo ni muerto perdona una declaración dudosa.',t:'hacienda'}];
+    let game;
+    const lines={start:['La mansión respira. Tú decides no investigar ese dato.','Una puerta se queja antes de que la toques.','El suelo cruje con intención narrativa.','Algo gotea. El guion no especifica qué.'],win:['El zombie cae. Tú finges que era el plan.','Victoria. No elegante, pero computa.'],lose:['La mansión toma nota de tu ridículo.','Eso ha dolido más en el ego que en el cuerpo.'],run:['Escapas con estilo discutible.','Tu huida parece coreografiada por el pánico.'],runFail:['Tropezón digno de secuela directa a vídeo.','Huir era buena idea. Ejecutarla era otra cosa.']};
+
+    function newGame(){game={state:'start',turn:1,level:1,life:3,maxLife:3,panic:0,mansionGrudge:0,room:'Vestíbulo',loot:0,zombiesDefeated:0,weapon:{...initialWeapon},oddity:null,consumables:[],tempStatus:null,cosmeticRidiculous:false,currentEnemy:null,currentEvent:null,currentLoot:null,lastRoll:null,defeatReason:'',flags:{selfEsteemBought:false,exitFound:false,amuletUsed:false,manualCooldown:0,trapsInARow:0,nonCombatInARow:0,nextZombieModifier:0,inFinalBoss:false,boostNextAttack:0,sprayDebuff:0,bengalaBuff:0}};addLog('Empiezas con una linterna y una autoestima prematura.');saveGame();render();}
+    const app=document.getElementById('app');
+    function addLog(t){game.log=[t,...(game.log||[])].slice(0,4);} 
+    function roll(){return 1+Math.floor(Math.random()*6)}
+    function pct(n){return Math.random()*100<n}
+    function rc(a){return a[Math.floor(Math.random()*a.length)]}
+    function setState(s){game.state=s;saveGame();render();window.scrollTo(0,0)}
+    function saveGame(){localStorage.setItem(STORAGE_KEY,JSON.stringify(game))}
+    function loadGame(){try{const g=JSON.parse(localStorage.getItem(STORAGE_KEY));if(!g||!g.weapon) return false;game=g;return true;}catch{return false;}}
+    function clearSave(){localStorage.removeItem(STORAGE_KEY)}
+    function clamp(){game.life=Math.max(0,Math.min(game.maxLife,game.life));game.panic=Math.max(0,Math.min(10,game.panic));game.mansionGrudge=Math.max(0,game.mansionGrudge)}
+    function effectiveWeaponBonus(){let b=game.weapon.bonus+(game.weapon.upgrades||0); if(game.weapon.id==='escopeta'&&game.panic>=6)b=2+(game.weapon.upgrades||0); if(game.currentEnemy?.tag==='fontanero')b=Math.max(0,b-1);return b;}
+    function heroBase(){return game.level+effectiveWeaponBonus()+(game.oddity?.bonus||0)+(game.tempStatus==='Inspirado'?2:0)+game.flags.boostNextAttack+game.flags.bengalaBuff;}
+    function chooseRoom(){if(game.flags.exitFound&&game.level>=9&&pct(45))return 'Puerta Principal'; if(game.level>=9&&pct(25))return 'Puerta Principal'; return rc(rooms);}
+    function advanceTurn(){game.turn++;if(game.turn%3===0){game.mansionGrudge++;addLog('La mansión frunce vigas. Rencor +1.');}if(game.oddity?.id==='manual'&&game.flags.manualCooldown>0)game.flags.manualCooldown--;if(game.mansionGrudge>=12&&!game.flags.inFinalBoss){lose('Rencor 12');return;} game.room=chooseRoom(); generateEncounter(); clamp(); saveGame(); render();}
+    function generateEncounter(){ if((game.level>=9&&game.flags.exitFound)||(game.turn>=20&&game.level>=8&&game.room==='Puerta Principal')){startFinalBoss();return;} if(game.turn<=2&&pct(2)===true){} let weights={z:45,e:20,l:15,t:10,o:7,s:3}; if(game.room==='Sótano'){weights.z+=10;weights.l+=20;} if(game.room==='Biblioteca'){weights.e+=10;weights.z-=5;} if(game.room==='Garaje'){weights.o+=10;} if(game.mansionGrudge>=8)weights.z+=10; if(game.panic>=7)weights.t+=5; if(game.flags.trapsInARow>=2)weights.t=0; if(game.flags.nonCombatInARow>=3)weights.z+=25;
+      const r=Math.random()*(weights.z+weights.e+weights.l+weights.t+weights.o+weights.s); let c='z',acc=weights.z; if(r>acc){acc+=weights.e;c='e';} if(r>acc){acc+=weights.l;c='l';} if(r>acc){acc+=weights.t;c='t';} if(r>acc){acc+=weights.o;c='o';} if(r>acc)c='s';
+      if(c==='z'){game.flags.trapsInARow=0;game.flags.nonCombatInARow=0; startCombat(generateZombie());}
+      if(c==='e'){game.flags.nonCombatInARow++; game.flags.trapsInARow=0; game.currentEvent=genEvent(); setState('event');}
+      if(c==='l'){game.flags.nonCombatInARow++; game.flags.trapsInARow=0; gainLoot(100+Math.floor(Math.random()*260)); addLog('Encuentras botín en una cajita sin contexto.'); setState('explore');}
+      if(c==='t'){game.flags.nonCombatInARow++; game.flags.trapsInARow++; applyTrap(); setState('explore');}
+      if(c==='o'){game.flags.nonCombatInARow++; game.flags.trapsInARow=0; game.currentLoot=genItemLoot(); setState('loot');}
+      if(c==='s'){game.flags.nonCombatInARow++; game.flags.trapsInARow=0; setState('shop');}
+    }
+    function generateZombie(){const d=rc(zdefs);let lv=d.b+Math.floor(game.mansionGrudge/3)+Math.floor(Math.random()*Math.max(1,Math.min(4,game.level))); if(game.turn<=3)lv=Math.min(lv,4); if(game.room==='Sótano')lv++; if(game.mansionGrudge>=8&&pct(35))lv++; return {name:d.n,base:d.b,level:lv,loot:d.l,text:d.e,tag:d.t,isBoss:false,isMini:false};}
+    function startCombat(e){game.currentEnemy=e;game.lastRoll=null; if(game.oddity?.id==='walkie'&&pct(20)){game.panic=Math.max(0,game.panic-1);addLog('El walkie chisporrotea ánimo. Pánico -1.');} if(e.tag==='payaso'){game.panic++;} if(e.tag==='hacienda'){const cut=Math.floor(game.loot*0.2);game.loot=Math.max(0,game.loot-cut); addLog('Inspección exprés: pierdes '+cut+' de botín.');} game.state='combat'; saveGame(); render();}
+    function enemyBase(){let b=game.currentEnemy.level+game.flags.nextZombieModifier; if(game.currentEnemy.isBoss) b=12+Math.floor(game.mansionGrudge/2); if(game.currentEnemy.tag==='hipster'&&(game.weapon.bonus+(game.weapon.upgrades||0)>=4))b+=2; if(game.currentEnemy.tag==='nino'){} if(game.currentEnemy.tag==='gym'&&game.life===game.maxLife)b+=2; if(game.currentEnemy.tag==='critico'){} if(game.currentEnemy.tag==='jardinero'&&(game.room==='Invernadero'||game.room==='Jardín'))b+=2; b-=game.flags.sprayDebuff; return b;}
+    function attack(){const e=game.currentEnemy; let hb=heroBase()-(e.tag==='critico'?1:0); let eb=enemyBase(); let hd=roll(),ed=roll(); if(game.weapon.id==='motosierra')game.mansionGrudge++; if(game.weapon.id==='katana'&&hd===1){game.loot=Math.max(0,game.loot-100);addLog('La katana te da vergüenza fiscal: -100 botín.');}
+      if(game.weapon.id==='billar'&&hd===6)gainLoot(100); if(game.weapon.id==='aspiradora'&&(e.tag==='nino'||e.tag==='becario'))hb+=2; if(game.weapon.id==='sarten'&&(e.tag==='chef'||e.tag==='domestico'))hb+=1; if(e.tag==='chef'&&game.weapon.id==='sarten')hb+=1;
+      if(e.tag==='gemelo')ed=Math.max(ed,roll());
+      const ht=hb+hd,et=eb+ed; game.lastRoll={hb,hd,ht,eb,ed,et}; game.flags.boostNextAttack=0; game.flags.bengalaBuff=0; game.flags.sprayDebuff=0; if(ht>et)resolveWin(); else resolveLoss(ht===et); clamp(); saveGame(); render();}
+    function resolveWin(){const e=game.currentEnemy; addLog(rc(lines.win)); game.zombiesDefeated++; gainLoot(e.loot+Math.floor(Math.random()*140)); if(e.level>=game.level)gainLevel(1,'combate'); if(e.level>=game.level+3)gainLevel(1,'combate épico'); if(game.weapon.id==='candelabro'&&(e.tag==='domestico'||e.tag==='hipster'))game.panic=Math.max(0,game.panic-1); if(e.tag==='primo'&&pct(35))addConsumable(rc(consumables)); if(game.level===9&&!game.flags.exitFound&&pct(35)){game.flags.exitFound=true;addLog('Encuentras una ruta hacia la Puerta Principal.');}
+      if(e.isBoss){game.level=10;setState('victory');return;} game.currentEnemy=null; setState('explore');}
+    function resolveLoss(tie){game.life--;game.panic++; addLog(tie?'Empate. En esta mansión gana quien peor huele.':rc(lines.lose)); applyBadStuff(game.currentEnemy); checkDefeat();}
+    function tryRun(){const e=game.currentEnemy; let d=roll(),need=5,bonus=0; if(game.panic>=7)need=6; if(game.oddity?.id==='botas')need=4; if(e.tag==='nino'||e.isBoss)need=6; if(e.tag==='abuelaturbo')need=Math.min(6,need+1); if(game.tempStatus==='Resbaladizo')bonus-=1; if(game.oddity?.id==='chandal')bonus+=1; if(d+bonus>=need){game.currentEnemy=null;game.mansionGrudge++;addLog(rc(lines.run));setState('explore');} else {game.life--;game.panic++;addLog(rc(lines.runFail));applyBadStuff(e); if(game.life<=0&&e.isBoss)lose('Final boss'); checkDefeat(); saveGame(); render();}}
+    function applyBadStuff(e){if(e.tag==='influencer'){game.panic++; game.loot=Math.max(0,game.loot-100);} if(e.tag==='domestico'&&game.consumables.length)game.consumables.splice(Math.floor(Math.random()*game.consumables.length),1); if(e.tag==='fontanero')game.mansionGrudge++; if(e.tag==='hipster')game.loot=Math.max(0,game.loot-200); if(e.tag==='payaso')game.panic+=2; if(e.tag==='nino')game.level=Math.max(1,game.level-1); if(e.tag==='critico'){game.panic++;game.loot=Math.max(0,game.loot-100);} if(e.tag==='hacienda'){if(game.loot>=300)game.loot-=300; else game.level=Math.max(1,game.level-1);} }
+    function gainLevel(a){for(let i=0;i<a;i++){if(game.level>=9&&!game.currentEnemy?.isBoss)break; game.level++; addLog('Subes de nivel. Tu autoestima no sabe gestionarlo.'); if(game.level===4||game.level===7){game.maxLife++;game.life=Math.min(game.maxLife,game.life+1);addLog('Tu cuerpo acepta seguir viviendo. Vida máxima +1.');}}}
+    function gainLoot(a){game.loot+=Math.max(0,a)}
+    function genItemLoot(){const r=Math.random(); if(r<0.4)return {type:'weapon',item:{...rc(weapons),upgrades:0}}; if(r<0.7)return {type:'oddity',item:{...rc(oddities)}}; return {type:'consumable',item:{...rc(consumables)}}}
+    function addConsumable(c){if(game.consumables.length<3){game.consumables.push(c);addLog('Guardas: '+c.name);} else {addLog('Mochila llena. Lo dejas por dignidad.');}}
+    function applyTrap(){if(game.consumables.some(c=>c.id==='llave')&&pct(20)){const i=game.consumables.findIndex(c=>c.id==='llave');game.consumables.splice(i,1);addLog('Usas Llave oxidada y cancelas una trampa.');return;} const t=rc(['Alfombra con Ambiciones','Candelabro con Problemas de Apego','Escalera Dramática','Libro con Opiniones','Puerta Falsa','Jarrón Familiar Carísimo','Moqueta que Hace Ruido Mojado','Retrato del Propietario']);
+      if(t==='Alfombra con Ambiciones')game.life--; if(t==='Candelabro con Problemas de Apego'){game.panic+=(game.oddity?.id==='gafas'?0:1);game.loot=Math.max(0,game.loot-100);} if(t==='Escalera Dramática'){if(game.oddity?.id!=='botas'){if(pct(50))game.life--;else game.panic+=2;}} if(t==='Libro con Opiniones')game.level=Math.max(1,game.level-1); if(t==='Puerta Falsa'){game.mansionGrudge++;game.turn++;} if(t==='Jarrón Familiar Carísimo'){if(game.loot>=300)game.loot-=300;else game.panic++;} if(t==='Moqueta que Hace Ruido Mojado')game.flags.nextZombieModifier=2; if(t==='Retrato del Propietario'){if(game.mansionGrudge>=6)startCombat(generateZombie()); else game.panic++;} addLog('Trampa: '+t+'.'); checkDefeat();}
+    function genEvent(){return rc(['Armario lleno de abrigos dramáticos','Teléfono que suena sin línea','Espejo demasiado sincero','Despensa de latas sin etiqueta','Caja fuerte ridículamente obvia','Sillón sospechosamente cómodo','Retrato que cambia de peinado','Ventana tapiada por exigencias del guion','Mesa con llaves, ninguna útil']);}
+    function resolveEvent(choice){const ev=game.currentEvent; if(ev==='Armario lleno de abrigos dramáticos'){if(choice==='buscar'){const r=Math.random();if(r<0.6)gainLoot(150);else if(r<0.9)startCombat(generateZombie());else game.panic++;}}
+      if(ev==='Teléfono que suena sin línea'){if(choice==='contestar'){const r=Math.random();if(r<0.5)game.panic=Math.max(0,game.panic-1);else if(r<0.8)game.panic++;else startCombat(generateZombie());} }
+      if(ev==='Espejo demasiado sincero'){if(game.oddity?.id!=='gafas')game.panic++;}
+      if(ev==='Despensa de latas sin etiqueta'){addConsumable({...rc(consumables)}); if(pct(20))game.panic++;}
+      if(ev==='Caja fuerte ridículamente obvia'&&choice==='abrir'){const r=Math.random();if(r<0.5)gainLoot(500); else if(r<0.8)applyTrap(); else {game.currentLoot=genItemLoot();setState('loot');return;}}
+      if(ev==='Sillón sospechosamente cómodo'){game.life=Math.min(game.maxLife,game.life+1);game.mansionGrudge++;}
+      if(ev==='Retrato que cambia de peinado'){game.panic++; if(game.level>=5&&pct(30))startCombat({name:'La Novia del Retrato Torcido',level:7,loot:900,text:'Su vestido flota. Su resentimiento también.',tag:'mininovia',isMini:true});}
+      if(ev==='Ventana tapiada por exigencias del guion'){if(game.level>=8){game.flags.exitFound=true;addLog('Detectas una salida potencial.');}}
+      if(ev==='Mesa con llaves, ninguna útil'){gainLoot(100); if(pct(20))addConsumable({id:'llave',name:'Llave oxidada',desc:'Cancela una trampa.'});}
+      game.currentEvent=null; checkDefeat(); setState('explore');}
+    function useConsumable(i,ctx='any'){const c=game.consumables[i]; if(!c)return; if(c.id==='energetica'){game.flags.boostNextAttack+=3;game.panic++;}
+      if(c.id==='spray'&&game.state==='combat'){game.flags.sprayDebuff=2;} if(c.id==='barrita'){game.life=Math.min(game.maxLife,game.life+1+(game.tempStatus==='Hambriento'?1:0)); if(pct(20))game.panic++;} if(c.id==='guion'&&game.state==='event'){game.currentEvent=genEvent();} if(c.id==='foto'){game.panic=Math.max(0,game.panic-2);} if(c.id==='bengala'){game.flags.bengalaBuff=2;game.mansionGrudge++;} if(c.id==='cupon'&&game.loot>=300){game.loot-=300;game.flags.boostNextAttack+=1;}
+      game.consumables.splice(i,1); addLog('Usas '+c.name+'.'); clamp(); checkDefeat(); saveGame(); render();}
+    function checkDefeat(){if(game.life<=0){if(game.oddity?.id==='amuleto'&&!game.flags.amuletUsed){game.flags.amuletUsed=true;game.life=1;game.oddity=null;addLog('El amuleto se rompe y te salva con 1 vida.');return false;} lose('Vida 0');return true;} if(game.panic>=10){lose('Pánico 10');return true;} if(game.mansionGrudge>=12&&!game.flags.inFinalBoss){lose('Rencor 12');return true;} return false;}
+    function lose(r){game.defeatReason=r;game.state='defeat';saveGame();render();}
+    function startFinalBoss(){game.flags.inFinalBoss=true;startCombat({name:'El Propietario Original, pero Muy Mal Conservado',level:12,loot:0,text:'Está en la puerta principal con una bata, una escritura de propiedad y cero intención de dejarte marchar.',tag:'boss',isBoss:true});}
+
+    function btn(t,fn,c=''){return `<button class="${c}" onclick="${fn}" aria-label="${t}"><strong>${t}</strong></button>`}
+    function render(){const g=game;const top=`<header><h1 class='title'><strong>ZOMBIES EN LA MANSIÓN DEL MAL GUSTO</strong></h1><div class='subtitle'><strong>${g.room||'Vestíbulo'}</strong> · ${zoneText[g.room]||''}</div><hr class='line'></header>`;
+      if(g.state==='start'){app.innerHTML=top+`<section class='section'><p class='big-line'><strong>Una mansión. Muchos zombies. Muy poco presupuesto emocional.</strong></p><div class='button-stack'>${btn('Nueva partida','newGame()')}${localStorage.getItem(STORAGE_KEY)?btn('Continuar partida','if(loadGame()){setState(\'explore\')}','secondary'):''}${btn('Cómo se juega','setState(\'rules\')','secondary')}</div></section>`;return;}
+      if(g.state==='rules'){app.innerHTML=top+`<p class='body-copy'><strong>Eres el héroe improbable de una película de zombies rodada con presupuesto emocional. Avanza, pelea, equípate y gestiona vida, pánico y rencor. Tu fuerza es nivel + equipo + dado. Si empatas, gana el zombie. Para escapar, alcanza nivel 10 derrotando al horror de la puerta principal.</strong></p><div class='button-stack'>${btn('Volver','setState(\'start\')')}</div>`;return;}
+      const stats=`<section class='section'><div class='stat-grid'>${[['Nivel',g.level],['Fuerza',heroBase()],['Vida',g.life+' / '+g.maxLife],['Pánico',g.panic+' / 10'],['Rencor',g.mansionGrudge+' / 12'],['Habitación',g.room],['Botín',g.loot],['Arma',g.weapon.name],['Objeto raro',g.oddity?g.oddity.name:'Ninguno'],['Estado',g.tempStatus||'Ninguno']].map(s=>`<div class='stat'><div class='stat-label'><strong>${s[0]}</strong></div><div class='stat-value'><strong>${s[1]}</strong></div></div>`).join('')}</div></section>`;
+      let main='';
+      if(g.state==='explore') main=`<section class='section'><p class='big-line'><strong>${rc(lines.start)}</strong></p><p class='body-copy'><strong>${zoneText[g.room]}</strong></p><div class='button-stack'>${btn('Avanzar por la mansión','advanceTurn()')}${btn('Ver mochila','setState(\'inventory\')','secondary')}${btn('Reiniciar partida','if(confirm(\'¿Reiniciar partida?\')){clearSave();newGame();}','danger')}</div></section>`;
+      if(g.state==='event') main=`<section class='section'><p class='caps'><strong>Evento</strong></p><p class='big-line'><strong>${g.currentEvent}</strong></p><p class='body-copy'><strong>La mansión te ofrece una decisión discutible.</strong></p><div class='button-stack'>${g.currentEvent.includes('Teléfono')?btn('Contestar como protagonista','resolveEvent(\'contestar\')'):''}${g.currentEvent.includes('Teléfono')?btn('Ignorarlo con madurez','resolveEvent(\'ignorar\')','secondary'):''}${g.currentEvent.includes('Armario')?btn('Buscar entre abrigos','resolveEvent(\'buscar\')'):''}${g.currentEvent.includes('Caja fuerte')?btn('Abrir caja fuerte','resolveEvent(\'abrir\')'):''}${(!g.currentEvent.includes('Teléfono')&&!g.currentEvent.includes('Armario')&&!g.currentEvent.includes('Caja fuerte'))?btn('Continuar','resolveEvent(\'seguir\')'):''}</div></section>`;
+      if(g.state==='combat'){const e=g.currentEnemy; main=`<section class='section'><p class='big-line'><strong>${e.name}</strong></p><p class='mini'><strong>Nivel ${e.level}${e.isBoss?' · Jefe final':''}</strong></p><p class='body-copy'><strong>${e.text}</strong></p><p class='mini'><strong>Tu base: ${heroBase()} · Su base: ${enemyBase()} · Empates: gana el zombie.</strong></p>${g.lastRoll?`<div class='block'><div class='mini'><strong>Tú: ${g.lastRoll.hb} + dado ${g.lastRoll.hd} = ${g.lastRoll.ht}</strong></div><div class='mini'><strong>Zombi: ${g.lastRoll.eb} + dado ${g.lastRoll.ed} = ${g.lastRoll.et}</strong></div></div>`:''}<div class='button-stack'>${btn('Atacar con confianza injustificada','attack()')}${g.consumables.length?btn('Usar algo de la mochila','setState(\'inventory\')','secondary'):''}${btn('Huir con dignidad negociable','tryRun()','secondary')}</div></section>`;}
+      if(g.state==='loot'){const l=g.currentLoot; main=`<section class='section'><p class='big-line'><strong>Encuentras algo cuestionablemente útil</strong></p><p class='body-copy'><strong>${l.item.name}</strong></p><p class='mini'><strong>${l.item.desc||l.item.effect||''}</strong></p><div class='button-stack'>${l.type==='weapon'?btn('Equipar esta maravilla',`game.weapon=${JSON.stringify(l.item).replace(/"/g,'&quot;')};game.currentLoot=null;addLog('Equipas nueva arma.');setState('explore')`):''}${l.type==='oddity'?btn('Equipar objeto raro',`game.oddity=${JSON.stringify(l.item).replace(/"/g,'&quot;')};game.currentLoot=null;addLog('Te equipas algo raro.');setState('explore')`):''}${l.type==='consumable'?btn('Guardar en mochila','addConsumable(game.currentLoot.item);game.currentLoot=null;setState(\'explore\')'):''}${btn('Vender y no hacer preguntas',`gainLoot(${l.item.value||100});game.currentLoot=null;setState('explore')`,'secondary')}${btn('Tirarlo como si sobrara','game.currentLoot=null;setState(\'explore\')','secondary')}</div></section>`;}
+      if(g.state==='shop') main=`<section class='section'><p class='big-line'><strong>Habitación segura, más o menos</strong></p><p class='body-copy'><strong>Hay una silla, una máquina expendedora y calma legalmente discutible.</strong></p><div class='button-stack'>${g.loot>=300&&g.life<g.maxLife?btn('Curar 1 vida por 300','game.loot-=300;game.life++;setState(\'shop\')'):''}${g.loot>=700&&(g.weapon.upgrades||0)<2?btn('Mejorar arma por 700','game.loot-=700;game.weapon.upgrades=(game.weapon.upgrades||0)+1;addLog(\'Arma mejorada.\');setState(\'shop\')'):''}${g.loot>=500&&g.mansionGrudge>0?btn('Sobornar a la mansión','game.loot-=500;game.mansionGrudge--;addLog(\'Dejas dinero en una mesita. La mansión respeta los rituales.\');setState(\'shop\')'):''}${g.loot>=1000&&!g.flags.selfEsteemBought&&g.level<9?btn('Comprar autoestima','game.loot-=1000;game.flags.selfEsteemBought=true;gainLevel(1,\'autoestima\');if(game.level>8)game.level=8;addLog(\'Compras autoestima en cuotas emocionales.\');setState(\'shop\')'):''}${btn('Seguir avanzando','setState(\'explore\')','secondary')}</div></section>`;
+      if(g.state==='inventory') main=`<section class='section'><p class='big-line'><strong>Mochila y equipo</strong></p><div class='block'><div class='mini'><strong>Arma:</strong> ${g.weapon.name} (+${g.weapon.bonus+(g.weapon.upgrades||0)})</div><div class='mini'><strong>${g.weapon.desc}</strong></div></div><div class='block'><div class='mini'><strong>Objeto raro:</strong> ${g.oddity?g.oddity.name:'Nada. Minimalismo defensivo.'}</div>${g.oddity?`<div class='mini'><strong>${g.oddity.effect}</strong></div>`:''}</div><div class='block'><div class='mini'><strong>Consumibles:</strong></div>${g.consumables.length?g.consumables.map((c,i)=>`<div class='mini'><strong>${c.name}</strong></div><div class='button-stack'>${btn('Usar','useConsumable('+i+')')}${btn('Vender por 100','game.loot+=100;game.consumables.splice('+i+',1);setState(\'inventory\')','secondary')}${btn('Descartar','game.consumables.splice('+i+',1);setState(\'inventory\')','secondary')}</div>`).join(''):`<div class='mini'><strong>Tu mochila contiene aire, migas y una confianza injustificada.</strong></div>`}</div><div class='button-stack'>${btn('Volver al desastre',`setState('${game.currentEnemy?'combat':'explore'}')`,'secondary')}</div></section>`;
+      if(g.state==='victory'){const title=g.panic<=3?'Profesional del Paseo Incómodo':g.panic>=8?'Héroe por Accidente y Sudor':g.zombiesDefeated>=12?'Tasador de Mandíbulas':g.turn<=14?'Speedrunner de la Humedad':g.life===1?'Casi Decoración del Sótano':'Superviviente con Buen Marketing'; main=`<section class='section'><p class='big-line'><strong>HAS ESCAPADO</strong></p><p class='body-copy'><strong>La mansión queda atrás. La noche huele a libertad y a secuela barata.</strong></p><div class='mini'><strong>Turnos: ${g.turn} · Zombies: ${g.zombiesDefeated} · Nivel: ${g.level} · Pánico: ${g.panic} · Rencor: ${g.mansionGrudge} · Botín: ${g.loot}</strong></div><div class='mini'><strong>Título: ${title}</strong></div><div class='button-stack'>${btn('Nueva partida','clearSave();newGame()')}</div></section>`; clearSave();}
+      if(g.state==='defeat'){const map={'Vida 0':['TE HAN PILLADO','Tu carrera de héroe termina en una moqueta cuestionable.'],'Pánico 10':['HAS PERDIDO LOS PAPELES','Empiezas a narrar la trama en voz alta. La mansión aprovecha.'],'Rencor 12':['LA COMUNIDAD HA VOTADO','El Comité de Vecinos Zombi no aprueba tu convivencia.'],'Final boss':['EL PROPIETARIO NO NEGOCIA','La escritura sigue a su nombre. Tú pasas a mobiliario narrativo.']};const d=map[g.defeatReason]||['DERROTA','La mansión gana por insistencia.']; main=`<section class='section'><p class='big-line'><strong>${d[0]}</strong></p><p class='body-copy'><strong>${d[1]}</strong></p><div class='mini'><strong>Turnos: ${g.turn} · Nivel: ${g.level} · Zombies: ${g.zombiesDefeated} · Botín: ${g.loot}</strong></div><div class='button-stack'>${btn('Nueva partida','clearSave();newGame()')}</div></section>`; clearSave();}
+      const log=`<section class='log'><div class='caps'><strong>Últimos sucesos</strong></div>${(g.log||[]).map(x=>`<div class='log-item'><strong>${x}</strong></div>`).join('')}</section>`;
+      app.innerHTML=top+stats+main+log;
+    }
+    window.newGame=newGame;window.loadGame=loadGame;window.setState=setState;window.advanceTurn=advanceTurn;window.attack=attack;window.tryRun=tryRun;window.resolveEvent=resolveEvent;window.useConsumable=useConsumable;window.addConsumable=addConsumable;window.gainLoot=gainLoot;window.clearSave=clearSave;window.addLog=addLog;
+    if(!loadGame())newGame(); else render();
+  </script>
+</body>
+</html>
