@@ -638,13 +638,18 @@
         }
 
         if (mode === "map") {
-          const lines = gameState.mapTrail.map(t => {
-            const marks = `${t.zombie ? "z" : "S"}${t.mat ? "+" : "-"}`;
-            return `[${String(t.idx).padStart(2, "0")}] ${marks}`;
-          }).join("\n");
+          const visited = Math.max(gameState.player.explored, 1);
+          const cols = 6;
+          const cells = Array.from({ length: visited }, (_, i) => i === visited - 1 ? "O" : "X");
+          const rows = [];
+
+          for (let i = 0; i < cells.length; i += cols) {
+            rows.push(cells.slice(i, i + cols).join("	"));
+          }
+
           panel.innerHTML = `
             <h2>mapa</h2>
-            <pre>--N--\n| ? |\nW @ E\n| ${gameState.room?.hasZombie ? "z" : "+"} |\n--S--\n\n@ jugador\nz zombie\n+ materiales\nS sala estable\n? desconocido\n\nrastro\n${lines || "sin datos"}</pre>
+            <pre>${rows.join("\n")}\n\nO habitación nueva\nX habitación visitada</pre>
             <button class="full secondary" id="closePanel">cerrar</button>
           `;
         }
