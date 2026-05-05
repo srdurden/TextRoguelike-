@@ -6,12 +6,12 @@
   <title>CUATRO PUERTAS</title>
   <style>
     :root {
-      --bg: #050505;
-      --panel: #111;
-      --panel-2: #151515;
-      --text: #f2f2f2;
-      --muted: #a9a9a9;
-      --line: #2a2a2a;
+      --bg: #ffffff;
+      --panel: #f6f6f6;
+      --panel-2: #ffffff;
+      --text: #111111;
+      --muted: #555555;
+      --line: #d0d0d0;
       --danger: #5a1515;
       --danger-text: #ffb5b5;
     }
@@ -73,10 +73,10 @@
 
     .combat-banner {
       border: 1px solid #3a3a3a;
-      background: #1a1a1a;
+      background: #f3f3f3;
       padding: 7px;
       font-size: 13px;
-      color: #d6d6d6;
+      color: #333;
     }
 
     .materials {
@@ -99,7 +99,7 @@
     button {
       width: 100%;
       border: 1px solid #3a3a3a;
-      background: #212121;
+      background: #ffffff;
       color: var(--text);
       padding: 12px 10px;
       font-size: 14px;
@@ -111,20 +111,20 @@
     }
 
     button:active { transform: translateY(1px); }
-    button.secondary { color: var(--muted); background: #191919; }
+    button.secondary { color: var(--muted); background: #f2f2f2; }
     button.danger { border-color: #5d2525; background: #281313; color: #efc7c7; }
     button.full { grid-column: 1 / -1; }
     button:disabled { opacity: .45; cursor: not-allowed; }
 
     .log {
       border: 1px solid var(--line);
-      background: #0f0f0f;
+      background: #fafafa;
       padding: 8px;
       max-height: 140px;
       overflow: auto;
       font-size: 12px;
       line-height: 1.45;
-      color: #c5c5c5;
+      color: #444;
     }
 
     .log .hit { color: #ffb3b3; }
@@ -255,6 +255,7 @@
             weapons: [createWeapon("palo")],
             equipped: "palo"
           },
+          tutorial: { rooms: false, combat: false, inventory: false, complete: false },
           room: null,
           inCombat: false,
           enemy: null,
@@ -573,7 +574,9 @@
         try {
           const raw = localStorage.getItem(SAVE_KEY);
           if (!raw) return null;
-          return JSON.parse(raw);
+          const parsed = JSON.parse(raw);
+          if (!parsed.tutorial) parsed.tutorial = { rooms: false, combat: false, inventory: false, complete: false };
+          return parsed;
         } catch {
           return null;
         }
@@ -660,19 +663,42 @@
         if (close) close.onclick = () => overlay.classList.remove("open");
       }
 
+      
+
+      function updateTutorialUnlocks() {
+        const u = gameState.tutorial;
+        if (!u) return;
+        if (gameState.player.explored >= 2) u.rooms = true;
+        if (gameState.inCombat || u.combat) u.combat = u.combat || gameState.inCombat;
+        const totalItems = Object.values(gameState.player.items).reduce((a,b)=>a+b,0) + gameState.player.weapons.length;
+        if (totalItems > 1) u.inventory = true;
+        if (u.rooms && u.combat && u.inventory) u.complete = true;
+      }
+
+      function infoLines() {
+        const u = gameState.tutorial;
+        const lines = ["superviviente en aprendizaje."];
+        if (u.rooms || u.complete) lines.push(`habitaciones visitadas: ${gameState.player.explored}`);
+        if ((u.combat || u.complete) && gameState.inCombat && gameState.enemy) lines.push(`vida zombie: ${gameState.enemy.hp}/${gameState.enemy.maxHp}`);
+        if (u.inventory || u.complete) lines.push(`inventario activo · armas: ${gameState.player.weapons.length} · objetos: ${Object.values(gameState.player.items).reduce((a,b)=>a+b,0)}`);
+        return lines.join(" | ");
+      }
+
       function render() {
         const s = gameState;
         document.getElementById("depthTag").textContent = `hab: ${s.player.explored}`;
 
-        document.getElementById("status").innerHTML = `
-          <strong>vida:</strong> ${s.player.hp}/${s.player.maxHp}
-          &nbsp;|&nbsp; <strong>arma:</strong> ${safeWeaponName()}
-          &nbsp;|&nbsp; <strong>balas:</strong> ${s.player.materials.balas}
-          <br>
-          <strong>exploradas:</strong> ${s.player.explored}
-          &nbsp;|&nbsp; <strong>vendas:</strong> ${s.player.items.venda}
-          &nbsp;|&nbsp; <strong>medicina:</strong> ${s.player.materials.medicina}
-        `;
+        updateTutorialUnlocks();
+        const tutorialDone = s.tutorial?.complete;
+        document.getElementById("status").innerHTML = tutorialDone
+          ? `<strong>vida:</strong> ${s.player.hp}/${s.player.maxHp}
+            &nbsp;|&nbsp; <strong>arma:</strong> ${safeWeaponName()}
+            &nbsp;|&nbsp; <strong>balas:</strong> ${s.player.materials.balas}
+            <br>
+            <strong>exploradas:</strong> ${s.player.explored}
+            &nbsp;|&nbsp; <strong>vendas:</strong> ${s.player.items.venda}
+            &nbsp;|&nbsp; <strong>medicina:</strong> ${s.player.materials.medicina}`
+          : `<strong>información:</strong> ${infoLines()}`;
 
         const scene = document.getElementById("scene");
         const mat = document.getElementById("materials");
@@ -712,17 +738,20 @@
         } else {
           banner.style.display = "none";
           const roomMatText = materialText(s.room.materials);
-          mat.textContent = s.room.looted ? "ya revisaste esta habitación." : (roomMatText ? `ves: ${roomMatText}.` : "no ves materiales útiles.");
+          const inFirstRoomIntro = s.player.explored === 1 && !(s.tutorial?.rooms);
+          mat.textContent = inFirstRoomIntro ? "elige una puerta para empezar." : (s.room.looted ? "ya revisaste esta habitación." : (roomMatText ? `ves: ${roomMatText}.` : "no ves materiales útiles."));
 
           actions.innerHTML = "";
-          if (!s.room.looted) actions.appendChild(mkBtn("recoger materiales", collectMaterials));
-          if (s.player.materials.medicina > 0 || s.player.items.venda > 0) actions.appendChild(mkBtn("usar medicina/venda", useMedicine, "secondary"));
 
-          actions.appendChild(mkBtn("inventario", () => openPanel("inventory"), "secondary"));
-          const canCraft = recipes.some(r => Object.entries(r.ingredients).every(([k,v]) => s.player.materials[k] >= v));
-          if (canCraft) actions.appendChild(mkBtn("fabricar", () => openPanel("craft"), "secondary"));
-          actions.appendChild(mkBtn("mapa", () => openPanel("map"), "secondary"));
-          actions.appendChild(mkBtn("nueva partida", resetGame, "danger"));
+          if (!inFirstRoomIntro) {
+            if (!s.room.looted) actions.appendChild(mkBtn("recoger materiales", collectMaterials));
+            if (s.player.materials.medicina > 0 || s.player.items.venda > 0) actions.appendChild(mkBtn("usar medicina/venda", useMedicine, "secondary"));
+            if (s.tutorial?.inventory || tutorialDone) actions.appendChild(mkBtn("inventario", () => openPanel("inventory"), "secondary"));
+            const canCraft = recipes.some(r => Object.entries(r.ingredients).every(([k,v]) => s.player.materials[k] >= v));
+            if (canCraft && (s.tutorial?.inventory || tutorialDone)) actions.appendChild(mkBtn("fabricar", () => openPanel("craft"), "secondary"));
+            actions.appendChild(mkBtn("mapa", () => openPanel("map"), "secondary"));
+            actions.appendChild(mkBtn("nueva partida", resetGame, "danger"));
+          }
 
           s.room.doors.forEach(d => {
             const label = `[${cap(d.dir)}] ${d.hint}${d.blocked ? " (bloqueada)" : ""}`;
