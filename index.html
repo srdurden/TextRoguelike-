@@ -225,14 +225,14 @@
 
     <main aria-live="polite" aria-atomic="true">
       <section class="monster-card" id="monsterCard">
-        <div class="article" id="article">El</div>
+        <div class="article" id="article">Enemigo</div>
         <h1 class="name" id="monsterName"></h1>
       </section>
     </main>
 
     <section class="footer">
       <button id="nextButton" type="button">Siguiente</button>
-      <div class="hint">Sustantivo + adjetivo · a veces con “y” o “pero”</div>
+      
     </section>
   </div>
 
@@ -372,7 +372,7 @@
       lastName = rawName;
       count += 1;
 
-      articleEl.textContent = noun.gender === "f" ? "La" : "El";
+      articleEl.textContent = "Enemigo";
       nameEl.innerHTML = `
         <span class="noun">${noun.text}</span>
         <span class="adjectives">${buildAdjectiveLine(adjectiveWords)}</span>
