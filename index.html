@@ -11,6 +11,7 @@
       --ink: #050505;
       --muted: #6f6f6f;
       --soft: #d9d9d9;
+      --panel: #f6f6f6;
       --hair: #111111;
       --maxw: 520px;
       --radius: 28px;
@@ -983,6 +984,407 @@
       .actions { padding-bottom: clamp(10px, 1.8dvh, 18px); }
     }
 
+
+    /* V3 final polish: más editorial, más compacto y más robusto para nombres largos. */
+    .masthead {
+      padding-bottom: 12px;
+      border-bottom-width: clamp(3px, .55vw, 5px);
+    }
+
+    .counter {
+      min-width: 72px;
+      transform-origin: left center;
+    }
+
+    .stage {
+      padding-top: clamp(8px, 2.45dvh, 22px);
+      padding-bottom: clamp(7px, 1.7dvh, 16px);
+    }
+
+    .actions {
+      padding-top: clamp(9px, 1.45dvh, 14px);
+      gap: clamp(7px, 1.15dvh, 10px);
+    }
+
+    .decision-title {
+      width: min(100%, 408px);
+    }
+
+    .decision-title .number {
+      font-size: clamp(6.95rem, 32.4vw, 12.25rem);
+    }
+
+    .decision-title .word {
+      font-size: clamp(3.5rem, 16vw, 7.05rem);
+    }
+
+    .choose-line {
+      margin-top: clamp(12px, 2.25dvh, 21px);
+      width: min(100%, 385px);
+      font-size: clamp(1.32rem, 6.15vw, 2.55rem);
+    }
+
+    .choice-button,
+    .primary-button {
+      min-height: clamp(54px, 7.25dvh, 68px);
+      border-width: 3px;
+    }
+
+    .choice-num {
+      font-size: clamp(2.12rem, 8.75vw, 3.5rem);
+    }
+
+    .choice-text {
+      font-size: clamp(1rem, 4.68vw, 1.92rem);
+    }
+
+    .selected-note {
+      color: #777;
+      font-size: clamp(.56rem, 2.25vw, .72rem);
+      letter-spacing: .33em;
+      margin-bottom: clamp(10px, 1.85dvh, 15px);
+    }
+
+    .selected-note .door-note-open {
+      margin-top: clamp(4px, .68dvh, 6px);
+      color: #5f5f5f;
+      font-size: .82em;
+      letter-spacing: .36em;
+    }
+
+    .monster-scene {
+      transform: translateY(clamp(2px, .9dvh, 12px));
+    }
+
+    .monster-scene .rule-label {
+      margin-bottom: clamp(15px, 2.55dvh, 23px);
+    }
+
+    .monster-name {
+      max-width: 100%;
+      overflow: visible;
+    }
+
+    .monster-adj {
+      width: fit-content;
+      max-width: min(96%, 470px);
+      margin-left: auto;
+      margin-right: auto;
+      text-wrap: balance;
+      overflow-wrap: normal;
+    }
+
+    .monster-name.long .monster-adj {
+      max-width: min(92%, 435px);
+      letter-spacing: -.062em;
+    }
+
+    .monster-name.xlong .monster-noun {
+      font-size: clamp(2.52rem, 11.9vw, 5.45rem);
+    }
+
+    .monster-name.xlong .monster-adj {
+      max-width: min(88%, 400px);
+      font-size: clamp(1.42rem, 6.85vw, 3.28rem);
+      line-height: .9;
+      letter-spacing: -.052em;
+    }
+
+    .monster-name.triple .monster-adj {
+      max-width: min(82%, 380px);
+      font-size: clamp(1.34rem, 6.45vw, 3.05rem);
+      line-height: .92;
+      letter-spacing: -.046em;
+    }
+
+    .monster-name.triple .connector {
+      font-size: .36em;
+      margin: 0 .12em;
+    }
+
+    .ghost-button {
+      min-height: clamp(28px, 3.95dvh, 36px);
+      font-size: clamp(.5rem, 2.25vw, .66rem);
+      letter-spacing: .19em;
+      font-weight: 850;
+      text-underline-offset: 5px;
+      opacity: .72;
+    }
+
+    .combat-scene {
+      transform: translateY(clamp(-10px, -1.25dvh, -3px));
+    }
+
+    .combat-scene .rule-label {
+      margin-bottom: clamp(8px, 1.35dvh, 13px);
+    }
+
+    .combat-monster {
+      margin-bottom: clamp(10px, 1.65dvh, 16px);
+    }
+
+    .combat-monster .monster-noun {
+      font-size: clamp(2.35rem, 11.1vw, 5rem);
+      line-height: .78;
+    }
+
+    .combat-monster .monster-adj {
+      max-width: min(86%, 360px);
+      font-size: clamp(1.5rem, 7.1vw, 3.25rem);
+      line-height: .85;
+    }
+
+    .combat-monster.long .monster-adj,
+    .combat-monster.xlong .monster-adj,
+    .combat-monster.triple .monster-adj {
+      max-width: min(80%, 335px);
+      font-size: clamp(1.08rem, 5.15vw, 2.28rem);
+      line-height: .92;
+      letter-spacing: -.035em;
+    }
+
+    .dice-row,
+    .totals-row {
+      width: min(100%, 445px);
+      gap: clamp(8px, 2.35vw, 14px);
+      grid-template-columns: 1fr auto 1fr;
+      align-items: start;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .totals-row {
+      margin-top: clamp(10px, 1.5dvh, 14px);
+    }
+
+    .totals-gap {
+      width: clamp(30px, 8.5vw, 45px);
+    }
+
+    .roll-label {
+      margin-bottom: clamp(6px, .85dvh, 8px);
+      font-size: clamp(.55rem, 2.35vw, .75rem);
+      letter-spacing: .22em;
+    }
+
+    .die {
+      width: min(100%, 142px);
+      border-width: 3px;
+      border-radius: 16px;
+      font-size: clamp(3.55rem, 18.5vw, 7.2rem);
+      margin: 0 auto;
+    }
+
+    .vs {
+      font-size: clamp(1.32rem, 5.9vw, 2.55rem);
+      gap: 5px;
+      align-self: center;
+      transform: translateY(-4px);
+    }
+
+    .vs::before,
+    .vs::after {
+      width: clamp(30px, 8.5vw, 45px);
+    }
+
+    .stat-card {
+      width: min(100%, 150px);
+      margin: 0 auto;
+      padding: 14px 16px 12px;
+      border-radius: 12px;
+      background: var(--panel);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.045);
+      text-align: left;
+    }
+
+    .stat-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .stat-label {
+      color: #8b8b8b;
+      font-size: clamp(.52rem, 2.2vw, .7rem);
+      letter-spacing: .28em;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      font-family: var(--display);
+      font-size: clamp(1.55rem, 7.3vw, 2.8rem);
+      font-weight: 1000;
+      line-height: .92;
+      letter-spacing: -.045em;
+    }
+
+    .stat-divider {
+      height: 1px;
+      background: rgba(0,0,0,.22);
+      margin: 11px 0 10px;
+    }
+
+    .stat-total {
+      font-family: var(--display);
+      font-size: clamp(2.9rem, 14.2vw, 5rem);
+      font-weight: 1000;
+      line-height: .8;
+      letter-spacing: -.065em;
+    }
+
+    .stat-total.pending {
+      color: #9f9f9f;
+      font-size: clamp(2.1rem, 10vw, 3.6rem);
+      letter-spacing: -.03em;
+    }
+
+    .result-card {
+      position: relative;
+      width: min(100%, 430px);
+      margin-top: clamp(16px, 2.2dvh, 22px);
+      padding: 16px 0;
+      min-height: 0;
+      border: 0;
+      background: transparent;
+    }
+
+    .result-card::before,
+    .result-card::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background:
+        linear-gradient(to right,
+          var(--ink) 0,
+          var(--ink) calc(50% - 22px),
+          transparent calc(50% - 22px),
+          transparent calc(50% + 22px),
+          var(--ink) calc(50% + 22px),
+          var(--ink) 100%);
+    }
+
+    .result-card::before { top: 0; }
+    .result-card::after { bottom: 0; }
+
+    .result-ornament {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 0 9px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 13px;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .result-ornament.top { top: -1px; }
+    .result-ornament.bottom { bottom: -1px; }
+
+    .result-shell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      min-height: clamp(68px, 9dvh, 84px);
+      margin: 12px 0;
+      padding: 14px 20px;
+      border-radius: 12px;
+      background: var(--panel);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.035);
+    }
+
+    .result-card.pending::before,
+    .result-card.pending::after,
+    .result-card.pending .result-ornament { display: none; }
+
+    .result-card.pending .result-shell {
+      min-height: 0;
+      margin: 0;
+      padding: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .result-emblem {
+      flex: 0 0 auto;
+      width: 42px;
+      height: 42px;
+      border: 2px solid currentColor;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-family: var(--sans);
+      font-size: 1.55rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .result-main {
+      margin: 0;
+      font-size: clamp(.98rem, 4.6vw, 2rem);
+      font-family: var(--display);
+      letter-spacing: .11em;
+      font-weight: 1000;
+      text-transform: uppercase;
+      line-height: .95;
+    }
+
+    .result-card.pending .result-main {
+      font-family: var(--sans);
+      font-size: clamp(.72rem, 3.18vw, 1rem);
+      letter-spacing: .30em;
+      font-weight: 950;
+    }
+
+    .result-card.win .result-shell {
+      background: var(--ink);
+      color: #fff;
+      box-shadow: none;
+    }
+
+    .result-card.lose .result-shell,
+    .result-card.tie .result-shell {
+      color: var(--ink);
+    }
+
+    .primary-button.next-button {
+      font-size: clamp(1.02rem, 5.18vw, 2.14rem);
+      min-height: clamp(52px, 7dvh, 66px);
+    }
+
+    @media (max-height: 720px) {
+      .decision-title .number { font-size: clamp(6.2rem, 30vw, 10.5rem); }
+      .decision-title .word { font-size: clamp(3.12rem, 14.7vw, 6.05rem); }
+      .ante { font-size: clamp(1.92rem, 9vw, 3.45rem); }
+      .choose-line { font-size: clamp(1.12rem, 5.35vw, 2.1rem); }
+
+      .monster-scene { transform: translateY(4px); }
+      .monster-scene .rule-label { margin-bottom: 12px; }
+
+      .combat-scene { transform: translateY(-8px); }
+      .combat-monster .monster-noun { font-size: clamp(2.08rem, 10.2vw, 4.25rem); }
+      .combat-monster .monster-adj { font-size: clamp(1.26rem, 6.1vw, 2.55rem); }
+
+      .die { width: min(100%, 128px); font-size: clamp(3.1rem, 16.4vw, 6.2rem); }
+      .stat-card { width: min(100%, 136px); padding: 12px 13px 10px; }
+      .result-card { margin-top: 11px; }
+      .result-shell { min-height: 60px; gap: 12px; }
+    }
+
+    @media (max-height: 620px) {
+      .combat-monster .monster-adj { display: block; }
+      .die { width: min(100%, 112px); }
+      .totals-row { margin-top: 8px; }
+      .stat-card { width: min(100%, 122px); padding: 10px 11px 9px; }
+      .result-card { padding: 12px 0; }
+    }
+
   </style>
 </head>
 <body>
@@ -1090,7 +1492,9 @@
       rolling: false,
       lastMonsterRaw: "",
       canFlee: false,
-      playerLevel: 1
+      playerLevel: 1,
+      combatPlayerLevel: null,
+      combatMonsterLevel: null
     };
 
     function randomItem(list) {
@@ -1162,10 +1566,13 @@
     }
 
     function nameSizeClass(monster) {
-      const score = monster.raw.length + monster.adjectives.length * 5;
-      if (score > 44) return "xlong";
-      if (score > 32) return "long";
-      return "";
+      const score = monster.raw.length + monster.adjectives.length * 7;
+      const classes = [];
+      if (score > 42) classes.push("xlong");
+      else if (score > 30) classes.push("long");
+      if (monster.adjectives.length === 2) classes.push("duo");
+      if (monster.adjectives.length >= 3) classes.push("triple");
+      return classes.join(" ");
     }
 
     function monsterName(monster, extraClass = "") {
@@ -1178,7 +1585,21 @@
     }
 
     function updateCounter() {
-      counter.textContent = `NVL ${state.playerLevel}`;
+      const nextText = `NVL ${state.playerLevel}`;
+      const previousText = counter.textContent;
+      counter.textContent = nextText;
+
+      if (previousText && previousText !== nextText && !prefersReducedMotion()) {
+        counter.animate([
+          { transform: "translateY(0) scale(1)", letterSpacing: ".15em", opacity: .65 },
+          { transform: "translateY(-1px) scale(1.18)", letterSpacing: ".22em", opacity: 1 },
+          { transform: "translateY(0) scale(1)", letterSpacing: ".15em", opacity: .88 }
+        ], {
+          duration: 520,
+          easing: "cubic-bezier(.22,1,.36,1)",
+          fill: "both"
+        });
+      }
     }
 
     function render(options = {}) {
@@ -1251,6 +1672,10 @@
 
     function renderCombat(options = {}) {
       const result = getResult();
+      const playerCombatLevel = getCombatPlayerLevel();
+      const enemyCombatLevel = getCombatMonsterLevel();
+      const playerTotal = getPlayerTotal();
+      const enemyTotal = getEnemyTotal();
       stage.innerHTML = `
         <section class="${sceneClasses(options)} combat-scene">
           <div class="rule-label" data-shared="label">Batalla NVL. ${state.monster.level}</div>
@@ -1266,9 +1691,26 @@
               <div class="die" id="enemyDie">${state.enemyRoll ?? "—"}</div>
             </div>
           </div>
-          <div class="result-card ${state.rolled ? result.kind : ""}" id="resultCard">
-            <p class="result-main">${state.rolled ? result.title : "Tirada pendiente"}</p>
-            <p class="result-sub">${state.rolled ? result.subtitle : ""}</p>
+          <div class="totals-row" aria-label="Niveles y totales del combate">
+            <div class="stat-card">
+              <div class="stat-row"><span class="stat-label">Nivel</span><span class="stat-value">+${playerCombatLevel}</span></div>
+              <div class="stat-divider"></div>
+              <div class="stat-row"><span class="stat-label">Total</span><span class="stat-total ${playerTotal == null ? 'pending' : ''}">${playerTotal ?? "—"}</span></div>
+            </div>
+            <div class="totals-gap" aria-hidden="true"></div>
+            <div class="stat-card">
+              <div class="stat-row"><span class="stat-label">Nivel</span><span class="stat-value">+${enemyCombatLevel}</span></div>
+              <div class="stat-divider"></div>
+              <div class="stat-row"><span class="stat-label">Total</span><span class="stat-total ${enemyTotal == null ? 'pending' : ''}">${enemyTotal ?? "—"}</span></div>
+            </div>
+          </div>
+          <div class="result-card ${state.rolled ? result.kind : "pending"}" id="resultCard">
+            <span class="result-ornament top" aria-hidden="true">✦</span>
+            <div class="result-shell">
+              ${state.rolled ? `<span class="result-emblem" aria-hidden="true">${result.icon}</span>` : ""}
+              <p class="result-main">${state.rolled ? result.title : "Tirada pendiente"}</p>
+            </div>
+            <span class="result-ornament bottom" aria-hidden="true">✦</span>
           </div>
         </section>
       `;
@@ -1660,6 +2102,8 @@
       app.classList.add('is-transitioning');
 
       state.screen = "combat";
+      state.combatPlayerLevel = state.playerLevel;
+      state.combatMonsterLevel = state.monster.level;
       state.playerRoll = null;
       state.enemyRoll = null;
       state.rolled = false;
@@ -1681,8 +2125,11 @@
       button.textContent = "Rodando…";
       playerDie.classList.add("rolling");
       enemyDie.classList.add("rolling");
+      resultCard.className = "result-card pending";
       resultCard.querySelector(".result-main").textContent = "Rodando";
-      resultCard.querySelector(".result-sub").textContent = "";
+      const shell = resultCard.querySelector(".result-shell");
+      const emblem = resultCard.querySelector(".result-emblem");
+      if (emblem) emblem.remove();
 
       let ticks = 0;
       const maxTicks = 18 + Math.floor(Math.random() * 7);
@@ -1705,9 +2152,28 @@
       }, 58);
     }
 
+    function getCombatPlayerLevel() {
+      return state.combatPlayerLevel ?? state.playerLevel;
+    }
+
+    function getCombatMonsterLevel() {
+      return state.combatMonsterLevel ?? state.monster?.level ?? 0;
+    }
+
+    function getPlayerTotal() {
+      return state.playerRoll == null ? null : state.playerRoll + getCombatPlayerLevel();
+    }
+
+    function getEnemyTotal() {
+      return state.enemyRoll == null ? null : state.enemyRoll + getCombatMonsterLevel();
+    }
+
     function getOutcomeKind() {
-      if (state.playerRoll > state.enemyRoll) return "win";
-      if (state.playerRoll < state.enemyRoll) return "lose";
+      const playerTotal = getPlayerTotal();
+      const enemyTotal = getEnemyTotal();
+      if (playerTotal == null || enemyTotal == null) return "tie";
+      if (playerTotal > enemyTotal) return "win";
+      if (playerTotal < enemyTotal) return "lose";
       return "tie";
     }
 
@@ -1717,20 +2183,20 @@
         return {
           kind,
           title: "Ganas el turno",
-          subtitle: ""
+          icon: "↑"
         };
       }
       if (kind === "lose") {
         return {
           kind,
           title: "Pierdes el turno",
-          subtitle: ""
+          icon: "×"
         };
       }
       return {
         kind,
         title: "Empate",
-        subtitle: ""
+        icon: "="
       };
     }
 
@@ -1752,6 +2218,8 @@
       state.rolled = false;
       state.rolling = false;
       state.canFlee = false;
+      state.combatPlayerLevel = null;
+      state.combatMonsterLevel = null;
       render({ noSceneAnimation: true });
       requestAnimationFrame(() => runCombatToDoorsTransition(snapshot));
     }
