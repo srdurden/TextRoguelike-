@@ -4,236 +4,616 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#ffffff" />
-  <title>Generador de Monstruos</title>
+  <title>Mansión Encantada</title>
   <style>
     :root {
       --bg: #ffffff;
-      --fg: #111111;
-      --muted: #5f5f5f;
-      --line: #111111;
-      --soft-line: #d7d7d7;
-      --button-height: 72px;
+      --ink: #050505;
+      --muted: #6f6f6f;
+      --soft: #d9d9d9;
+      --hair: #111111;
+      --maxw: 520px;
+      --radius: 28px;
+      --ease: cubic-bezier(.2,.8,.2,1);
+      --sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --display: Impact, "Arial Black", "Helvetica Neue Condensed Black", "Arial Narrow", var(--sans);
+      --serif: Didot, "Bodoni 72", "Bodoni 72 Smallcaps", "Times New Roman", Georgia, serif;
     }
 
     * {
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
+      user-select: none;
     }
 
     html,
     body {
       margin: 0;
+      width: 100%;
       min-height: 100%;
       background: var(--bg);
-      color: var(--fg);
-      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      font-family: var(--sans);
       overflow: hidden;
     }
 
     body {
-      min-height: 100dvh;
-    }
-
-    .app {
-      min-height: 100dvh;
-      display: grid;
-      grid-template-rows: auto 1fr auto;
-      padding:
-        max(22px, env(safe-area-inset-top))
-        max(22px, env(safe-area-inset-right))
-        max(18px, env(safe-area-inset-bottom))
-        max(22px, env(safe-area-inset-left));
-    }
-
-    header {
-      padding-top: 4px;
-    }
-
-    .kicker {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 16px;
-      border-bottom: 4px solid var(--line);
-      padding-bottom: 14px;
-      text-transform: uppercase;
-      letter-spacing: 0.22em;
-      font-weight: 900;
-      font-size: clamp(0.72rem, 2.8vw, 0.95rem);
-    }
-
-    .count {
-      color: var(--muted);
-      letter-spacing: 0.14em;
-      white-space: nowrap;
-    }
-
-    main {
-      display: grid;
-      place-items: center;
-      min-height: 0;
-      padding: 22px 0;
-    }
-
-    .monster-card {
-      width: 100%;
-      max-width: 760px;
-      text-align: center;
-      animation: appear 180ms ease-out;
-    }
-
-    .article {
-      display: inline-block;
-      margin-bottom: 10px;
-      border-top: 2px solid var(--line);
-      border-bottom: 2px solid var(--line);
-      padding: 5px 12px 6px;
-      text-transform: uppercase;
-      letter-spacing: 0.22em;
-      font-weight: 950;
-      font-size: clamp(0.72rem, 2.7vw, 0.95rem);
-    }
-
-    .name {
-      margin: 0;
-      text-wrap: balance;
-      letter-spacing: -0.065em;
-      line-height: 0.92;
-      font-size: clamp(3.1rem, 13.5vw, 8.5rem);
-      font-weight: 1000;
-    }
-
-    .noun {
-      display: block;
-    }
-
-    .adjectives {
-      display: block;
-      margin-top: 0.11em;
-      font-size: 0.67em;
-      line-height: 0.98;
-      letter-spacing: -0.055em;
-    }
-
-    .connector {
-      font-size: 0.52em;
-      letter-spacing: -0.025em;
-      font-weight: 850;
-      color: var(--muted);
-      margin: 0 0.05em;
-    }
-
-    .footer {
-      border-top: 1px solid var(--soft-line);
-      padding-top: 16px;
-      display: grid;
-      gap: 10px;
+      height: 100dvh;
     }
 
     button {
-      width: 100%;
-      min-height: var(--button-height);
-      border: 4px solid var(--line);
-      border-radius: 26px;
-      background: var(--bg);
-      color: var(--fg);
       font: inherit;
-      font-size: clamp(1.25rem, 5.2vw, 2.1rem);
+      color: inherit;
+    }
+
+    .app {
+      position: relative;
+      width: min(100%, var(--maxw));
+      height: 100dvh;
+      margin: 0 auto;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      padding:
+        max(18px, env(safe-area-inset-top))
+        max(22px, env(safe-area-inset-right))
+        max(16px, env(safe-area-inset-bottom))
+        max(22px, env(safe-area-inset-left));
+      background:
+        radial-gradient(ellipse at top, rgba(0,0,0,.055), transparent 38%),
+        linear-gradient(#fff, #fff);
+    }
+
+    .top {
+      padding-top: 4px;
+    }
+
+    .masthead {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 0 0 14px;
+      border-bottom: clamp(4px, .75vw, 7px) solid var(--ink);
+      font-weight: 950;
+      text-transform: uppercase;
+      letter-spacing: .245em;
+      font-size: clamp(.72rem, 3vw, .95rem);
+      line-height: 1;
+    }
+
+    .counter {
+      flex: 0 0 auto;
+      letter-spacing: .15em;
+      color: #242424;
+      opacity: .88;
+    }
+
+    .stage {
+      min-height: 0;
+      display: grid;
+      align-items: center;
+      padding: clamp(10px, 3.2dvh, 28px) 0;
+    }
+
+    .scene {
+      width: 100%;
+      text-align: center;
+      animation: sceneIn 420ms var(--ease) both;
+    }
+
+    .actions {
+      border-top: 1px solid var(--soft);
+      padding-top: clamp(12px, 2dvh, 18px);
+      display: grid;
+      gap: 12px;
+    }
+
+    .rule-label {
+      display: inline-grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 13px;
+      margin: 0 auto clamp(18px, 3.4dvh, 28px);
+      font-size: clamp(.74rem, 3.1vw, 1.03rem);
+      font-weight: 950;
+      letter-spacing: .34em;
+      text-transform: uppercase;
+      line-height: 1;
+    }
+
+    .rule-label::before,
+    .rule-label::after {
+      content: "";
+      width: clamp(52px, 17vw, 96px);
+      height: 3px;
+      background: var(--ink);
+    }
+
+    .decision-title {
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: end;
+      gap: clamp(13px, 3.6vw, 20px);
+      width: min(100%, 460px);
+      text-align: left;
+    }
+
+    .decision-title .number {
+      font-family: var(--display);
+      font-size: clamp(8.2rem, 37vw, 15rem);
       font-weight: 1000;
-      letter-spacing: -0.045em;
-      text-align: center;
-      cursor: pointer;
-      transition: transform 90ms ease, background 90ms ease, color 90ms ease;
-      touch-action: manipulation;
+      letter-spacing: -.055em;
+      line-height: .74;
+      transform: translateY(.03em);
     }
 
-    button:active {
-      transform: scale(0.985);
-      background: var(--fg);
-      color: var(--bg);
-    }
-
-    .hint {
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.78rem;
-      font-weight: 800;
-      letter-spacing: 0.08em;
+    .decision-title .word {
+      font-family: var(--display);
+      font-size: clamp(4rem, 18vw, 8.4rem);
+      font-weight: 1000;
+      line-height: .82;
+      letter-spacing: -.035em;
       text-transform: uppercase;
     }
 
-    @keyframes appear {
+    .ante {
+      margin: clamp(4px, .8dvh, 10px) 0 0;
+      font-weight: 950;
+      letter-spacing: -.065em;
+      font-size: clamp(2.7rem, 12.2vw, 5.2rem);
+      line-height: .9;
+    }
+
+    .choose-line {
+      margin: clamp(20px, 3.9dvh, 34px) auto 0;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 18px;
+      width: min(100%, 390px);
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: clamp(2rem, 8.6vw, 3.8rem);
+      line-height: 1;
+    }
+
+    .choose-line::before,
+    .choose-line::after {
+      content: "";
+      height: 3px;
+      background: var(--ink);
+    }
+
+    .door-grid {
+      display: grid;
+      gap: 11px;
+    }
+
+    .choice-button,
+    .primary-button,
+    .ghost-button {
+      width: 100%;
+      min-height: clamp(64px, 9.4dvh, 86px);
+      border: 4px solid var(--ink);
+      border-radius: var(--radius);
+      background: #fff;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: transform 110ms var(--ease), background 110ms var(--ease), color 110ms var(--ease), border-radius 180ms var(--ease);
+    }
+
+    .choice-button:active,
+    .primary-button:active,
+    .ghost-button:active {
+      transform: scale(.985);
+      background: var(--ink);
+      color: #fff;
+      border-radius: 21px;
+    }
+
+    .choice-button {
+      position: relative;
+      display: grid;
+      grid-template-columns: auto 1px 1fr;
+      align-items: center;
+      gap: clamp(18px, 5vw, 28px);
+      padding: 0 clamp(21px, 6vw, 34px);
+      text-align: left;
+      overflow: hidden;
+    }
+
+    .choice-button.right {
+      grid-template-columns: 1fr 1px auto;
+      text-align: left;
+    }
+
+    .choice-num {
+      font-weight: 1000;
+      font-size: clamp(2.4rem, 10.2vw, 4.35rem);
+      letter-spacing: -.06em;
+      line-height: 1;
+    }
+
+    .choice-line {
+      width: 1px;
+      height: 42%;
+      background: var(--ink);
+      opacity: .55;
+    }
+
+    .choice-text {
+      font-weight: 950;
+      font-size: clamp(1.25rem, 5.7vw, 2.55rem);
+      letter-spacing: -.055em;
+      white-space: nowrap;
+    }
+
+    .selected-note {
+      margin: 0 0 clamp(10px, 1.9dvh, 16px);
+      color: var(--muted);
+      font-size: clamp(.68rem, 2.7vw, .88rem);
+      font-weight: 900;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+    }
+
+    .monster-name {
+      margin: 0 auto;
+      width: min(100%, 500px);
+      text-align: center;
+      text-wrap: balance;
+    }
+
+    .monster-noun {
+      display: block;
+      font-family: var(--display);
+      font-size: clamp(4.6rem, 20vw, 9.8rem);
+      line-height: .78;
+      letter-spacing: -.03em;
+      text-transform: uppercase;
+      font-weight: 1000;
+    }
+
+    .monster-adj {
+      display: block;
+      margin-top: clamp(-8px, -1.1dvh, -2px);
+      font-family: var(--serif);
+      font-size: clamp(3rem, 14vw, 7.2rem);
+      line-height: .88;
+      letter-spacing: -.08em;
+      font-style: italic;
+      font-weight: 500;
+      text-transform: lowercase;
+    }
+
+    .monster-name.long .monster-noun { font-size: clamp(3.55rem, 16.6vw, 8.2rem); }
+    .monster-name.long .monster-adj { font-size: clamp(2.35rem, 11.5vw, 5.8rem); }
+    .monster-name.xlong .monster-noun { font-size: clamp(2.85rem, 13.6vw, 6.4rem); }
+    .monster-name.xlong .monster-adj { font-size: clamp(2.05rem, 9.8vw, 4.9rem); }
+
+    .connector {
+      display: inline-block;
+      margin: 0 .08em;
+      font-family: var(--sans);
+      font-size: .43em;
+      letter-spacing: .02em;
+      font-style: normal;
+      font-weight: 950;
+      color: var(--muted);
+      transform: translateY(-.14em);
+    }
+
+    .primary-button,
+    .ghost-button {
+      display: grid;
+      place-items: center;
+      padding: 0 22px;
+      font-family: var(--display);
+      font-size: clamp(1.7rem, 8vw, 3.8rem);
+      font-weight: 1000;
+      letter-spacing: .035em;
+      text-transform: uppercase;
+      line-height: 1;
+    }
+
+    .ghost-button {
+      min-height: clamp(50px, 7.2dvh, 64px);
+      border-width: 2px;
+      border-radius: 18px;
+      font-family: var(--sans);
+      font-size: clamp(.86rem, 3.7vw, 1.25rem);
+      letter-spacing: .18em;
+      font-weight: 900;
+    }
+
+    .combat-monster {
+      margin-bottom: clamp(16px, 2.6dvh, 24px);
+    }
+
+    .combat-monster .monster-noun {
+      font-size: clamp(3.2rem, 15.5vw, 7rem);
+    }
+
+    .combat-monster .monster-adj {
+      font-size: clamp(2.3rem, 10.5vw, 5.4rem);
+    }
+
+    .dice-row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: clamp(10px, 3vw, 18px);
+      align-items: center;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .roll-col {
+      min-width: 0;
+    }
+
+    .roll-label {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 9px;
+      font-size: clamp(.63rem, 2.7vw, .88rem);
+      letter-spacing: .22em;
+      font-weight: 950;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .roll-label::before,
+    .roll-label::after {
+      content: "";
+      height: 2px;
+      background: var(--ink);
+    }
+
+    .die {
+      aspect-ratio: 1 / 1;
+      width: 100%;
+      border: 3px solid var(--ink);
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      font-family: var(--display);
+      font-size: clamp(4.2rem, 22vw, 8.6rem);
+      font-weight: 1000;
+      line-height: 1;
+      letter-spacing: -.04em;
+      background: #fff;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.08);
+    }
+
+    .die.rolling {
+      animation: diePulse 70ms steps(2, end) infinite;
+    }
+
+    .vs {
+      display: grid;
+      place-items: center;
+      gap: 7px;
+      font-family: var(--display);
+      font-size: clamp(1.55rem, 7vw, 3rem);
+      font-weight: 1000;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .vs::before,
+    .vs::after {
+      content: "";
+      display: block;
+      width: clamp(38px, 10vw, 56px);
+      height: 3px;
+      background: var(--ink);
+    }
+
+    .result-card {
+      margin: clamp(18px, 3.4dvh, 30px) auto 0;
+      width: min(100%, 430px);
+      min-height: clamp(80px, 11dvh, 112px);
+      display: grid;
+      align-content: center;
+      padding: 14px 18px;
+      border-left: 2px solid var(--ink);
+      border-right: 2px solid var(--ink);
+      position: relative;
+    }
+
+    .result-card::before,
+    .result-card::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      width: 24%;
+      height: 2px;
+      background: var(--ink);
+    }
+
+    .result-card::before { left: 0; }
+    .result-card::after { right: 0; }
+
+    .result-main {
+      margin: 0;
+      font-size: clamp(.8rem, 3.7vw, 1.18rem);
+      letter-spacing: .26em;
+      font-weight: 950;
+      text-transform: uppercase;
+      line-height: 1.15;
+    }
+
+    .result-sub {
+      margin: 8px 0 0;
+      font-family: var(--serif);
+      font-size: clamp(1.18rem, 5.7vw, 2.3rem);
+      font-style: italic;
+      line-height: 1;
+      letter-spacing: -.035em;
+    }
+
+    .result-card.win {
+      background: var(--ink);
+      color: #fff;
+      border-color: var(--ink);
+      animation: verdict 520ms var(--ease) both;
+    }
+
+    .result-card.win::before,
+    .result-card.win::after {
+      background: #fff;
+    }
+
+    .result-card.lose,
+    .result-card.tie {
+      animation: verdict 520ms var(--ease) both;
+    }
+
+    .mini-mark {
+      margin: clamp(9px, 1.8dvh, 14px) 0 0;
+      color: var(--muted);
+      font-size: .72rem;
+      font-weight: 850;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    @keyframes sceneIn {
       from {
         opacity: 0;
-        transform: translateY(6px) scale(0.99);
+        transform: translateY(10px) scale(.985);
+        filter: blur(5px);
       }
       to {
         opacity: 1;
         transform: translateY(0) scale(1);
+        filter: blur(0);
       }
     }
 
-    @media (max-height: 680px) {
+    @keyframes diePulse {
+      0% { transform: translate(-1px, 1px) rotate(-1deg) scale(.99); }
+      50% { transform: translate(1px, -1px) rotate(1deg) scale(1.01); }
+      100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+    }
+
+    @keyframes verdict {
+      0% { transform: scale(.97); letter-spacing: .18em; }
+      55% { transform: scale(1.035); }
+      100% { transform: scale(1); }
+    }
+
+    @media (max-height: 720px) {
       .app {
-        padding-top: max(14px, env(safe-area-inset-top));
-        padding-bottom: max(12px, env(safe-area-inset-bottom));
+        padding-top: max(12px, env(safe-area-inset-top));
+        padding-bottom: max(10px, env(safe-area-inset-bottom));
       }
 
-      .kicker {
-        border-bottom-width: 3px;
+      .masthead {
+        padding-bottom: 10px;
+        border-bottom-width: 4px;
+      }
+
+      .stage {
+        padding-top: 10px;
         padding-bottom: 10px;
       }
 
-      main {
-        padding: 14px 0;
+      .rule-label {
+        margin-bottom: 14px;
       }
 
-      .name {
-        font-size: clamp(2.55rem, 11.4vw, 6.5rem);
+      .choose-line {
+        margin-top: 14px;
       }
 
-      .article {
-        margin-bottom: 7px;
+      .monster-noun {
+        font-size: clamp(3.8rem, 17vw, 7.2rem);
       }
 
-      button {
-        min-height: 62px;
-        border-radius: 22px;
+      .monster-adj {
+        font-size: clamp(2.6rem, 11.7vw, 5.2rem);
       }
 
-      .hint {
+      .combat-monster {
+        margin-bottom: 12px;
+      }
+
+      .combat-monster .monster-noun {
+        font-size: clamp(2.8rem, 13.2vw, 5.6rem);
+      }
+
+      .combat-monster .monster-adj {
+        font-size: clamp(2rem, 8.9vw, 4.1rem);
+      }
+
+      .result-card {
+        margin-top: 14px;
+        min-height: 72px;
+      }
+
+      .actions {
+        padding-top: 10px;
+        gap: 9px;
+      }
+
+      .choice-button,
+      .primary-button {
+        min-height: 60px;
+        border-width: 3px;
+        border-radius: 23px;
+      }
+
+      .ghost-button {
+        min-height: 45px;
+      }
+    }
+
+    @media (max-height: 620px) {
+      .decision-title .number {
+        font-size: clamp(6.3rem, 31vw, 10.8rem);
+      }
+
+      .decision-title .word {
+        font-size: clamp(3.2rem, 15vw, 6.1rem);
+      }
+
+      .ante {
+        font-size: clamp(2.1rem, 9.8vw, 3.8rem);
+      }
+
+      .choose-line {
+        font-size: clamp(1.45rem, 6.7vw, 2.8rem);
+      }
+
+      .result-sub,
+      .mini-mark {
         display: none;
       }
     }
 
-    @media (min-width: 680px) {
+    @media (min-width: 560px) {
       .app {
-        padding-left: 44px;
-        padding-right: 44px;
+        border-left: 1px solid rgba(0,0,0,.05);
+        border-right: 1px solid rgba(0,0,0,.05);
       }
     }
   </style>
 </head>
 <body>
-  <div class="app">
-    <header>
-      <div class="kicker">
-        <span>Monstruo aleatorio</span>
-        <span class="count" id="counter">Nº 001</span>
+  <div class="app" id="app">
+    <header class="top">
+      <div class="masthead">
+        <span>Mansión encantada</span>
+        <span class="counter" id="counter">Nº 001</span>
       </div>
     </header>
 
-    <main aria-live="polite" aria-atomic="true">
-      <section class="monster-card" id="monsterCard">
-        <div class="article" id="article">Enemigo</div>
-        <h1 class="name" id="monsterName"></h1>
-      </section>
-    </main>
-
-    <section class="footer">
-      <button id="nextButton" type="button">Siguiente</button>
-      
-    </section>
+    <main class="stage" id="stage" aria-live="polite" aria-atomic="true"></main>
+    <section class="actions" id="actions"></section>
   </div>
 
   <script>
@@ -250,14 +630,20 @@
       { text: "Ogro", gender: "m" },
       { text: "Duende", gender: "m" },
       { text: "Sirena", gender: "f" },
-      { text: "Hombre Lobo", gender: "m" },
+      { text: "Hombre lobo", gender: "m" },
       { text: "Gárgola", gender: "f" },
       { text: "Cactus", gender: "m" },
       { text: "Peluche", gender: "m" },
       { text: "Cocodrilo", gender: "m" },
       { text: "Seta", gender: "f" },
       { text: "Maniquí", gender: "m" },
-      { text: "Mapache", gender: "m" }
+      { text: "Mapache", gender: "m" },
+      { text: "Caballero", gender: "m" },
+      { text: "Murciélago", gender: "m" },
+      { text: "Calabaza", gender: "f" },
+      { text: "Retrato", gender: "m" },
+      { text: "Mayordomo", gender: "m" },
+      { text: "Sombra", gender: "f" }
     ];
 
     const adjectives = [
@@ -300,32 +686,57 @@
       { m: "envidioso", f: "envidiosa" },
       { m: "polvoriento", f: "polvorienta" },
       { m: "misterioso", f: "misteriosa" },
-      { m: "sobreactuado", f: "sobreactuada" }
+      { m: "sobreactuado", f: "sobreactuada" },
+      { m: "insoportable", f: "insoportable" },
+      { m: "solemne", f: "solemne" },
+      { m: "ridículo", f: "ridícula" },
+      { m: "impecable", f: "impecable" }
     ];
 
-    const articleEl = document.getElementById("article");
-    const nameEl = document.getElementById("monsterName");
-    const cardEl = document.getElementById("monsterCard");
-    const counterEl = document.getElementById("counter");
-    const buttonEl = document.getElementById("nextButton");
+    const stage = document.getElementById("stage");
+    const actions = document.getElementById("actions");
+    const counter = document.getElementById("counter");
 
-    let count = 0;
-    let lastName = "";
+    const state = {
+      room: 1,
+      screen: "doors",
+      chosenDoor: "",
+      monster: null,
+      playerRoll: null,
+      enemyRoll: null,
+      rolled: false,
+      rolling: false,
+      lastMonsterRaw: ""
+    };
 
     function randomItem(list) {
       return list[Math.floor(Math.random() * list.length)];
     }
 
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
     function pickUniqueAdjectives(amount) {
       const pool = [...adjectives];
       const picked = [];
-
-      while (picked.length < amount && pool.length > 0) {
+      while (picked.length < amount && pool.length) {
         const index = Math.floor(Math.random() * pool.length);
         picked.push(pool.splice(index, 1)[0]);
       }
-
       return picked;
+    }
+
+    function adjectiveCount() {
+      const roll = Math.random();
+      if (roll < .05) return 3;
+      if (roll < .45) return 2;
+      return 1;
     }
 
     function adjectiveText(adjective, gender) {
@@ -333,66 +744,247 @@
     }
 
     function buildAdjectiveLine(words) {
-      if (words.length === 1) return words[0];
-
-      if (words.length === 2) {
-        const connector = Math.random() < 0.5 ? "y" : "pero";
-        return `${words[0]} <span class="connector">${connector}</span> ${words[1]}`;
+      const clean = words.map(escapeHtml);
+      if (clean.length === 1) return clean[0];
+      if (clean.length === 2) {
+        const connector = Math.random() < .5 ? "y" : "pero";
+        return `${clean[0]} <span class="connector">${connector}</span> ${clean[1]}`;
       }
-
-      const yFirst = Math.random() < 0.5;
+      const yFirst = Math.random() < .5;
       if (yFirst) {
-        return `${words[0]} <span class="connector">y</span> ${words[1]} <span class="connector">pero</span> ${words[2]}`;
+        return `${clean[0]} <span class="connector">y</span> ${clean[1]} <span class="connector">pero</span> ${clean[2]}`;
       }
-      return `${words[0]} <span class="connector">pero</span> ${words[1]} <span class="connector">y</span> ${words[2]}`;
-    }
-
-    function adjectiveCount() {
-      const roll = Math.random();
-      if (roll < 0.05) return 3;     // 5%: dos adjetivos extra, con “y” y “pero”
-      if (roll < 0.45) return 2;     // 40%: un adjetivo extra, con “y” o “pero”
-      return 1;                      // 55%: sustantivo + adjetivo
+      return `${clean[0]} <span class="connector">pero</span> ${clean[1]} <span class="connector">y</span> ${clean[2]}`;
     }
 
     function generateMonster() {
-      let noun;
-      let picked;
-      let adjectiveWords;
-      let rawName;
+      let monster;
       let attempts = 0;
-
       do {
-        noun = randomItem(nouns);
-        picked = pickUniqueAdjectives(adjectiveCount());
-        adjectiveWords = picked.map(adj => adjectiveText(adj, noun.gender));
-        rawName = `${noun.text} ${adjectiveWords.join(" ")}`;
-        attempts++;
-      } while (rawName === lastName && attempts < 10);
-
-      lastName = rawName;
-      count += 1;
-
-      articleEl.textContent = "Enemigo";
-      nameEl.innerHTML = `
-        <span class="noun">${noun.text}</span>
-        <span class="adjectives">${buildAdjectiveLine(adjectiveWords)}</span>
-      `;
-      counterEl.textContent = `Nº ${String(count).padStart(3, "0")}`;
-
-      cardEl.style.animation = "none";
-      cardEl.offsetHeight;
-      cardEl.style.animation = "";
+        const noun = randomItem(nouns);
+        const picked = pickUniqueAdjectives(adjectiveCount());
+        const words = picked.map(adj => adjectiveText(adj, noun.gender));
+        monster = {
+          noun: noun.text,
+          adjectives: words,
+          adjectiveHtml: buildAdjectiveLine(words),
+          raw: `${noun.text} ${words.join(" ")}`
+        };
+        attempts += 1;
+      } while (monster.raw === state.lastMonsterRaw && attempts < 12);
+      state.lastMonsterRaw = monster.raw;
+      return monster;
     }
 
-    buttonEl.addEventListener("click", generateMonster);
-    document.addEventListener("keydown", (event) => {
-      if (event.code === "Space" || event.code === "Enter") {
+    function nameSizeClass(monster) {
+      const score = monster.raw.length + monster.adjectives.length * 5;
+      if (score > 44) return "xlong";
+      if (score > 32) return "long";
+      return "";
+    }
+
+    function monsterName(monster, extraClass = "") {
+      return `
+        <h1 class="monster-name ${nameSizeClass(monster)} ${extraClass}">
+          <span class="monster-noun">${escapeHtml(monster.noun)}</span>
+          <span class="monster-adj">${monster.adjectiveHtml}</span>
+        </h1>
+      `;
+    }
+
+    function updateCounter() {
+      counter.textContent = `Nº ${String(state.room).padStart(3, "0")}`;
+    }
+
+    function render() {
+      updateCounter();
+      stage.innerHTML = "";
+      actions.innerHTML = "";
+
+      if (state.screen === "doors") renderDoors();
+      if (state.screen === "monster") renderMonster();
+      if (state.screen === "combat") renderCombat();
+    }
+
+    function renderDoors() {
+      stage.innerHTML = `
+        <section class="scene decision-scene">
+          <div class="rule-label">Decisión</div>
+          <h1 class="decision-title" aria-label="Dos puertas ante ti">
+            <span class="number">2</span>
+            <span class="word">Puertas</span>
+          </h1>
+          <p class="ante">ante ti</p>
+          <div class="choose-line"><span>elige una</span></div>
+        </section>
+      `;
+      actions.innerHTML = `
+        <div class="door-grid">
+          <button class="choice-button" type="button" data-door="izquierda" aria-label="Elegir puerta izquierda">
+            <span class="choice-num">01</span>
+            <span class="choice-line" aria-hidden="true"></span>
+            <span class="choice-text">Puerta izquierda</span>
+          </button>
+          <button class="choice-button right" type="button" data-door="derecha" aria-label="Elegir puerta derecha">
+            <span class="choice-text">Puerta derecha</span>
+            <span class="choice-line" aria-hidden="true"></span>
+            <span class="choice-num">02</span>
+          </button>
+        </div>
+      `;
+      actions.querySelectorAll("[data-door]").forEach(button => {
+        button.addEventListener("click", () => chooseDoor(button.dataset.door));
+      });
+    }
+
+    function renderMonster() {
+      const doorText = state.chosenDoor === "izquierda" ? "Puerta izquierda" : "Puerta derecha";
+      stage.innerHTML = `
+        <section class="scene monster-scene">
+          <div class="selected-note">${escapeHtml(doorText)} abierta</div>
+          <div class="rule-label">Enemigo</div>
+          ${monsterName(state.monster)}
+          <p class="mini-mark">Algo respira al otro lado.</p>
+        </section>
+      `;
+      actions.innerHTML = `
+        <button class="primary-button" type="button" id="combatButton">Entrar en combate</button>
+      `;
+      document.getElementById("combatButton").addEventListener("click", startCombat);
+    }
+
+    function renderCombat() {
+      const result = getResult();
+      stage.innerHTML = `
+        <section class="scene combat-scene">
+          <div class="rule-label">Batalla</div>
+          ${monsterName(state.monster, "combat-monster")}
+          <div class="dice-row" aria-label="Tiradas de combate">
+            <div class="roll-col">
+              <div class="roll-label">Tu tirada</div>
+              <div class="die" id="playerDie">${state.playerRoll ?? "—"}</div>
+            </div>
+            <div class="vs">VS</div>
+            <div class="roll-col">
+              <div class="roll-label">Su tirada</div>
+              <div class="die" id="enemyDie">${state.enemyRoll ?? "—"}</div>
+            </div>
+          </div>
+          <div class="result-card ${state.rolled ? result.kind : ""}" id="resultCard">
+            <p class="result-main">${state.rolled ? result.title : "Tirada pendiente"}</p>
+            <p class="result-sub">${state.rolled ? result.subtitle : "El silencio también tira dados."}</p>
+          </div>
+        </section>
+      `;
+
+      if (!state.rolled) {
+        actions.innerHTML = `<button class="primary-button" type="button" id="rollButton">Lanzar dados</button>`;
+        document.getElementById("rollButton").addEventListener("click", rollDice);
+      } else {
+        actions.innerHTML = `
+          <button class="primary-button" type="button" id="nextRoomButton">Siguiente habitación</button>
+        `;
+        document.getElementById("nextRoomButton").addEventListener("click", nextRoom);
+      }
+    }
+
+    function chooseDoor(door) {
+      state.chosenDoor = door;
+      state.monster = generateMonster();
+      state.screen = "monster";
+      render();
+    }
+
+    function startCombat() {
+      state.screen = "combat";
+      state.playerRoll = null;
+      state.enemyRoll = null;
+      state.rolled = false;
+      state.rolling = false;
+      render();
+    }
+
+    function rollDice() {
+      if (state.rolling) return;
+      state.rolling = true;
+      const button = document.getElementById("rollButton");
+      const playerDie = document.getElementById("playerDie");
+      const enemyDie = document.getElementById("enemyDie");
+      const resultCard = document.getElementById("resultCard");
+
+      button.disabled = true;
+      button.textContent = "Rodando";
+      playerDie.classList.add("rolling");
+      enemyDie.classList.add("rolling");
+      resultCard.querySelector(".result-main").textContent = "Los dados despiertan";
+      resultCard.querySelector(".result-sub").textContent = "La mansión aguanta la respiración.";
+
+      let ticks = 0;
+      const maxTicks = 18 + Math.floor(Math.random() * 7);
+      const interval = setInterval(() => {
+        ticks += 1;
+        playerDie.textContent = String(1 + Math.floor(Math.random() * 6));
+        enemyDie.textContent = String(1 + Math.floor(Math.random() * 6));
+
+        if (ticks >= maxTicks) {
+          clearInterval(interval);
+          state.playerRoll = 1 + Math.floor(Math.random() * 6);
+          state.enemyRoll = 1 + Math.floor(Math.random() * 6);
+          state.rolled = true;
+          state.rolling = false;
+          render();
+        }
+      }, 58);
+    }
+
+    function getResult() {
+      if (state.playerRoll > state.enemyRoll) {
+        return {
+          kind: "win",
+          title: "Ganas el turno",
+          subtitle: "Tu golpe supera al enemigo."
+        };
+      }
+      if (state.playerRoll < state.enemyRoll) {
+        return {
+          kind: "lose",
+          title: "Pierdes el turno",
+          subtitle: "El monstruo huele la victoria."
+        };
+      }
+      return {
+        kind: "tie",
+        title: "Empate inquietante",
+        subtitle: "Nadie se atreve a parpadear."
+      };
+    }
+
+    function nextRoom() {
+      state.room += 1;
+      state.screen = "doors";
+      state.chosenDoor = "";
+      state.monster = null;
+      state.playerRoll = null;
+      state.enemyRoll = null;
+      state.rolled = false;
+      state.rolling = false;
+      render();
+    }
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "1" && state.screen === "doors") chooseDoor("izquierda");
+      if (event.key === "2" && state.screen === "doors") chooseDoor("derecha");
+      if ((event.key === "Enter" || event.key === " ") && state.screen === "combat" && !state.rolled) {
         event.preventDefault();
-        generateMonster();
+        rollDice();
+      }
+      if ((event.key === "Enter" || event.key === " ") && state.screen === "combat" && state.rolled) {
+        event.preventDefault();
+        nextRoom();
       }
     });
 
-    generateMonster();
+    render();
   </script>
 </body>
 </html>
