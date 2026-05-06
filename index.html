@@ -460,6 +460,8 @@
       letter-spacing: -.035em;
     }
 
+    .result-sub:empty { display: none; }
+
     .result-card.win {
       background: var(--ink);
       color: #fff;
@@ -987,8 +989,8 @@
   <div class="app" id="app">
     <header class="top">
       <div class="masthead">
+        <span class="counter" id="counter">NVL 1</span>
         <span>Mansión encantada</span>
-        <span class="counter" id="counter">Nº 001</span>
       </div>
     </header>
 
@@ -1087,7 +1089,8 @@
       rolled: false,
       rolling: false,
       lastMonsterRaw: "",
-      canFlee: false
+      canFlee: false,
+      playerLevel: 1
     };
 
     function randomItem(list) {
@@ -1149,7 +1152,8 @@
           noun: noun.text,
           adjectives: words,
           adjectiveHtml: buildAdjectiveLine(words),
-          raw: `${noun.text} ${words.join(" ")}`
+          raw: `${noun.text} ${words.join(" ")}`,
+          level: 1 + Math.floor(Math.random() * 6)
         };
         attempts += 1;
       } while (monster.raw === state.lastMonsterRaw && attempts < 12);
@@ -1174,7 +1178,7 @@
     }
 
     function updateCounter() {
-      counter.textContent = `Nº ${String(state.room).padStart(3, "0")}`;
+      counter.textContent = `NVL ${state.playerLevel}`;
     }
 
     function render(options = {}) {
@@ -1201,7 +1205,6 @@
           </h1>
           <p class="ante">ante ti</p>
           <div class="choose-line"><span>elige una puerta</span></div>
-          <p class="scene-whisper">una cruje. la otra espera.</p>
         </section>
       `;
       actions.innerHTML = `
@@ -1228,9 +1231,8 @@
       stage.innerHTML = `
         <section class="${sceneClasses(options)} monster-scene">
           <div class="selected-note"><span class="door-note-line">${escapeHtml(doorText)}</span><span class="door-note-open">abierta</span></div>
-          <div class="rule-label" data-shared="label">Enemigo</div>
+          <div class="rule-label" data-shared="label">Enemigo NVL. ${state.monster.level}</div>
           ${monsterName(state.monster)}
-          <p class="mini-mark">algo respira al otro lado</p>
         </section>
       `;
 
@@ -1251,7 +1253,7 @@
       const result = getResult();
       stage.innerHTML = `
         <section class="${sceneClasses(options)} combat-scene">
-          <div class="rule-label" data-shared="label">Batalla</div>
+          <div class="rule-label" data-shared="label">Batalla NVL. ${state.monster.level}</div>
           ${monsterName(state.monster, "combat-monster")}
           <div class="dice-row" aria-label="Tiradas de combate">
             <div class="roll-col">
@@ -1265,8 +1267,8 @@
             </div>
           </div>
           <div class="result-card ${state.rolled ? result.kind : ""}" id="resultCard">
-            <p class="result-main">${state.rolled ? result.title : "Los dados esperan"}</p>
-            <p class="result-sub">${state.rolled ? result.subtitle : "El silencio también tira dados."}</p>
+            <p class="result-main">${state.rolled ? result.title : "Tirada pendiente"}</p>
+            <p class="result-sub">${state.rolled ? result.subtitle : ""}</p>
           </div>
         </section>
       `;
@@ -1679,8 +1681,8 @@
       button.textContent = "Rodando…";
       playerDie.classList.add("rolling");
       enemyDie.classList.add("rolling");
-      resultCard.querySelector(".result-main").textContent = "Los dados despiertan";
-      resultCard.querySelector(".result-sub").textContent = "La mansión aguanta la respiración.";
+      resultCard.querySelector(".result-main").textContent = "Rodando";
+      resultCard.querySelector(".result-sub").textContent = "";
 
       let ticks = 0;
       const maxTicks = 18 + Math.floor(Math.random() * 7);
@@ -1693,6 +1695,9 @@
           clearInterval(interval);
           state.playerRoll = 1 + Math.floor(Math.random() * 6);
           state.enemyRoll = 1 + Math.floor(Math.random() * 6);
+          const outcome = getOutcomeKind();
+          if (outcome === "win") state.playerLevel += 1;
+          if (outcome === "lose") state.playerLevel = Math.max(1, state.playerLevel - 1);
           state.rolled = true;
           state.rolling = false;
           render();
@@ -1700,25 +1705,32 @@
       }, 58);
     }
 
+    function getOutcomeKind() {
+      if (state.playerRoll > state.enemyRoll) return "win";
+      if (state.playerRoll < state.enemyRoll) return "lose";
+      return "tie";
+    }
+
     function getResult() {
-      if (state.playerRoll > state.enemyRoll) {
+      const kind = getOutcomeKind();
+      if (kind === "win") {
         return {
-          kind: "win",
+          kind,
           title: "Ganas el turno",
-          subtitle: "Tu golpe supera al enemigo."
+          subtitle: ""
         };
       }
-      if (state.playerRoll < state.enemyRoll) {
+      if (kind === "lose") {
         return {
-          kind: "lose",
+          kind,
           title: "Pierdes el turno",
-          subtitle: "El enemigo golpea primero."
+          subtitle: ""
         };
       }
       return {
-        kind: "tie",
+        kind,
         title: "Empate",
-        subtitle: "Nadie se atreve a respirar."
+        subtitle: ""
       };
     }
 
