@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#ffffff" />
+  <title>Generador de Monstruos</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #111111;
+      --muted: #5f5f5f;
+      --line: #111111;
+      --soft-line: #d7d7d7;
+      --button-height: 72px;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow: hidden;
+    }
+
+    body {
+      min-height: 100dvh;
+    }
+
+    .app {
+      min-height: 100dvh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      padding:
+        max(22px, env(safe-area-inset-top))
+        max(22px, env(safe-area-inset-right))
+        max(18px, env(safe-area-inset-bottom))
+        max(22px, env(safe-area-inset-left));
+    }
+
+    header {
+      padding-top: 4px;
+    }
+
+    .kicker {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 16px;
+      border-bottom: 4px solid var(--line);
+      padding-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+      font-weight: 900;
+      font-size: clamp(0.72rem, 2.8vw, 0.95rem);
+    }
+
+    .count {
+      color: var(--muted);
+      letter-spacing: 0.14em;
+      white-space: nowrap;
+    }
+
+    main {
+      display: grid;
+      place-items: center;
+      min-height: 0;
+      padding: 22px 0;
+    }
+
+    .monster-card {
+      width: 100%;
+      max-width: 760px;
+      text-align: center;
+      animation: appear 180ms ease-out;
+    }
+
+    .article {
+      display: inline-block;
+      margin-bottom: 10px;
+      border-top: 2px solid var(--line);
+      border-bottom: 2px solid var(--line);
+      padding: 5px 12px 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+      font-weight: 950;
+      font-size: clamp(0.72rem, 2.7vw, 0.95rem);
+    }
+
+    .name {
+      margin: 0;
+      text-wrap: balance;
+      letter-spacing: -0.065em;
+      line-height: 0.92;
+      font-size: clamp(3.1rem, 13.5vw, 8.5rem);
+      font-weight: 1000;
+    }
+
+    .noun {
+      display: block;
+    }
+
+    .adjectives {
+      display: block;
+      margin-top: 0.11em;
+      font-size: 0.67em;
+      line-height: 0.98;
+      letter-spacing: -0.055em;
+    }
+
+    .connector {
+      font-size: 0.52em;
+      letter-spacing: -0.025em;
+      font-weight: 850;
+      color: var(--muted);
+      margin: 0 0.05em;
+    }
+
+    .footer {
+      border-top: 1px solid var(--soft-line);
+      padding-top: 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    button {
+      width: 100%;
+      min-height: var(--button-height);
+      border: 4px solid var(--line);
+      border-radius: 26px;
+      background: var(--bg);
+      color: var(--fg);
+      font: inherit;
+      font-size: clamp(1.25rem, 5.2vw, 2.1rem);
+      font-weight: 1000;
+      letter-spacing: -0.045em;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 90ms ease, background 90ms ease, color 90ms ease;
+      touch-action: manipulation;
+    }
+
+    button:active {
+      transform: scale(0.985);
+      background: var(--fg);
+      color: var(--bg);
+    }
+
+    .hint {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    @keyframes appear {
+      from {
+        opacity: 0;
+        transform: translateY(6px) scale(0.99);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @media (max-height: 680px) {
+      .app {
+        padding-top: max(14px, env(safe-area-inset-top));
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
+      }
+
+      .kicker {
+        border-bottom-width: 3px;
+        padding-bottom: 10px;
+      }
+
+      main {
+        padding: 14px 0;
+      }
+
+      .name {
+        font-size: clamp(2.55rem, 11.4vw, 6.5rem);
+      }
+
+      .article {
+        margin-bottom: 7px;
+      }
+
+      button {
+        min-height: 62px;
+        border-radius: 22px;
+      }
+
+      .hint {
+        display: none;
+      }
+    }
+
+    @media (min-width: 680px) {
+      .app {
+        padding-left: 44px;
+        padding-right: 44px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="kicker">
+        <span>Monstruo aleatorio</span>
+        <span class="count" id="counter">Nº 001</span>
+      </div>
+    </header>
+
+    <main aria-live="polite" aria-atomic="true">
+      <section class="monster-card" id="monsterCard">
+        <div class="article" id="article">El</div>
+        <h1 class="name" id="monsterName"></h1>
+      </section>
+    </main>
+
+    <section class="footer">
+      <button id="nextButton" type="button">Siguiente</button>
+      <div class="hint">Sustantivo + adjetivo · a veces con “y” o “pero”</div>
+    </section>
+  </div>
+
+  <script>
+    const nouns = [
+      { text: "Payaso", gender: "m" },
+      { text: "Zombie", gender: "m" },
+      { text: "Momia", gender: "f" },
+      { text: "Vampiro", gender: "m" },
+      { text: "Capibara", gender: "m" },
+      { text: "Gremlin", gender: "m" },
+      { text: "Fantasma", gender: "m" },
+      { text: "Esqueleto", gender: "m" },
+      { text: "Bruja", gender: "f" },
+      { text: "Ogro", gender: "m" },
+      { text: "Duende", gender: "m" },
+      { text: "Sirena", gender: "f" },
+      { text: "Hombre Lobo", gender: "m" },
+      { text: "Gárgola", gender: "f" },
+      { text: "Cactus", gender: "m" },
+      { text: "Peluche", gender: "m" },
+      { text: "Cocodrilo", gender: "m" },
+      { text: "Seta", gender: "f" },
+      { text: "Maniquí", gender: "m" },
+      { text: "Mapache", gender: "m" }
+    ];
+
+    const adjectives = [
+      { m: "sanguinario", f: "sanguinaria" },
+      { m: "maloliente", f: "maloliente" },
+      { m: "perfumado", f: "perfumada" },
+      { m: "sonriente", f: "sonriente" },
+      { m: "triste", f: "triste" },
+      { m: "pegajoso", f: "pegajosa" },
+      { m: "dramático", f: "dramática" },
+      { m: "elegante", f: "elegante" },
+      { m: "resentido", f: "resentida" },
+      { m: "melancólico", f: "melancólica" },
+      { m: "diminuto", f: "diminuta" },
+      { m: "colosal", f: "colosal" },
+      { m: "susurrante", f: "susurrante" },
+      { m: "rencoroso", f: "rencorosa" },
+      { m: "despeinado", f: "despeinada" },
+      { m: "glorioso", f: "gloriosa" },
+      { m: "patético", f: "patética" },
+      { m: "viscoso", f: "viscosa" },
+      { m: "crujiente", f: "crujiente" },
+      { m: "educadísimo", f: "educadísima" },
+      { m: "torpe", f: "torpe" },
+      { m: "siniestro", f: "siniestra" },
+      { m: "amargado", f: "amargada" },
+      { m: "festivo", f: "festiva" },
+      { m: "culpable", f: "culpable" },
+      { m: "mimoso", f: "mimosa" },
+      { m: "histérico", f: "histérica" },
+      { m: "puntilloso", f: "puntillosa" },
+      { m: "caducado", f: "caducada" },
+      { m: "carismático", f: "carismática" },
+      { m: "sudoroso", f: "sudorosa" },
+      { m: "arrepentido", f: "arrepentida" },
+      { m: "cósmico", f: "cósmica" },
+      { m: "dominguero", f: "dominguera" },
+      { m: "teatral", f: "teatral" },
+      { m: "bizco", f: "bizca" },
+      { m: "envidioso", f: "envidiosa" },
+      { m: "polvoriento", f: "polvorienta" },
+      { m: "misterioso", f: "misteriosa" },
+      { m: "sobreactuado", f: "sobreactuada" }
+    ];
+
+    const articleEl = document.getElementById("article");
+    const nameEl = document.getElementById("monsterName");
+    const cardEl = document.getElementById("monsterCard");
+    const counterEl = document.getElementById("counter");
+    const buttonEl = document.getElementById("nextButton");
+
+    let count = 0;
+    let lastName = "";
+
+    function randomItem(list) {
+      return list[Math.floor(Math.random() * list.length)];
+    }
+
+    function pickUniqueAdjectives(amount) {
+      const pool = [...adjectives];
+      const picked = [];
+
+      while (picked.length < amount && pool.length > 0) {
+        const index = Math.floor(Math.random() * pool.length);
+        picked.push(pool.splice(index, 1)[0]);
+      }
+
+      return picked;
+    }
+
+    function adjectiveText(adjective, gender) {
+      return gender === "f" ? adjective.f : adjective.m;
+    }
+
+    function buildAdjectiveLine(words) {
+      if (words.length === 1) return words[0];
+
+      if (words.length === 2) {
+        const connector = Math.random() < 0.5 ? "y" : "pero";
+        return `${words[0]} <span class="connector">${connector}</span> ${words[1]}`;
+      }
+
+      const yFirst = Math.random() < 0.5;
+      if (yFirst) {
+        return `${words[0]} <span class="connector">y</span> ${words[1]} <span class="connector">pero</span> ${words[2]}`;
+      }
+      return `${words[0]} <span class="connector">pero</span> ${words[1]} <span class="connector">y</span> ${words[2]}`;
+    }
+
+    function adjectiveCount() {
+      const roll = Math.random();
+      if (roll < 0.05) return 3;     // 5%: dos adjetivos extra, con “y” y “pero”
+      if (roll < 0.45) return 2;     // 40%: un adjetivo extra, con “y” o “pero”
+      return 1;                      // 55%: sustantivo + adjetivo
+    }
+
+    function generateMonster() {
+      let noun;
+      let picked;
+      let adjectiveWords;
+      let rawName;
+      let attempts = 0;
+
+      do {
+        noun = randomItem(nouns);
+        picked = pickUniqueAdjectives(adjectiveCount());
+        adjectiveWords = picked.map(adj => adjectiveText(adj, noun.gender));
+        rawName = `${noun.text} ${adjectiveWords.join(" ")}`;
+        attempts++;
+      } while (rawName === lastName && attempts < 10);
+
+      lastName = rawName;
+      count += 1;
+
+      articleEl.textContent = noun.gender === "f" ? "La" : "El";
+      nameEl.innerHTML = `
+        <span class="noun">${noun.text}</span>
+        <span class="adjectives">${buildAdjectiveLine(adjectiveWords)}</span>
+      `;
+      counterEl.textContent = `Nº ${String(count).padStart(3, "0")}`;
+
+      cardEl.style.animation = "none";
+      cardEl.offsetHeight;
+      cardEl.style.animation = "";
+    }
+
+    buttonEl.addEventListener("click", generateMonster);
+    document.addEventListener("keydown", (event) => {
+      if (event.code === "Space" || event.code === "Enter") {
+        event.preventDefault();
+        generateMonster();
+      }
+    });
+
+    generateMonster();
+  </script>
+</body>
+</html>
