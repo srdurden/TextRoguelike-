@@ -99,6 +99,11 @@
       width: 100%;
       text-align: center;
       animation: sceneIn 420ms var(--ease) both;
+      will-change: transform, opacity, filter;
+    }
+
+    .scene.no-auto-animate {
+      animation: none;
     }
 
     .actions {
@@ -318,11 +323,11 @@
     }
 
     .ghost-button {
-      min-height: clamp(50px, 7.2dvh, 64px);
+      min-height: clamp(48px, 6.8dvh, 60px);
       border-width: 2px;
       border-radius: 18px;
       font-family: var(--sans);
-      font-size: clamp(.86rem, 3.7vw, 1.25rem);
+      font-size: clamp(.72rem, 3.15vw, 1rem);
       letter-spacing: .18em;
       font-weight: 900;
     }
@@ -479,6 +484,21 @@
       font-weight: 850;
       letter-spacing: .16em;
       text-transform: uppercase;
+    }
+
+    .transition-ghost {
+      position: fixed;
+      z-index: 9999;
+      margin: 0;
+      pointer-events: none;
+      transform-origin: top left;
+      background: transparent;
+      will-change: transform, opacity, filter;
+    }
+
+    .app.is-transitioning,
+    .app.is-transitioning button {
+      pointer-events: none;
     }
 
     @keyframes sceneIn {
@@ -706,7 +726,8 @@
       enemyRoll: null,
       rolled: false,
       rolling: false,
-      lastMonsterRaw: ""
+      lastMonsterRaw: "",
+      canFlee: false
     };
 
     function randomItem(list) {
@@ -785,9 +806,9 @@
 
     function monsterName(monster, extraClass = "") {
       return `
-        <h1 class="monster-name ${nameSizeClass(monster)} ${extraClass}">
-          <span class="monster-noun">${escapeHtml(monster.noun)}</span>
-          <span class="monster-adj">${monster.adjectiveHtml}</span>
+        <h1 class="monster-name ${nameSizeClass(monster)} ${extraClass}" data-shared="name">
+          <span class="monster-noun" data-shared="noun">${escapeHtml(monster.noun)}</span>
+          <span class="monster-adj" data-shared="adj">${monster.adjectiveHtml}</span>
         </h1>
       `;
     }
@@ -796,19 +817,23 @@
       counter.textContent = `Nº ${String(state.room).padStart(3, "0")}`;
     }
 
-    function render() {
+    function render(options = {}) {
       updateCounter();
       stage.innerHTML = "";
       actions.innerHTML = "";
 
-      if (state.screen === "doors") renderDoors();
-      if (state.screen === "monster") renderMonster();
-      if (state.screen === "combat") renderCombat();
+      if (state.screen === "doors") renderDoors(options);
+      if (state.screen === "monster") renderMonster(options);
+      if (state.screen === "combat") renderCombat(options);
     }
 
-    function renderDoors() {
+    function sceneClasses(options = {}) {
+      return `scene ${options.noSceneAnimation ? "no-auto-animate" : ""}`.trim();
+    }
+
+    function renderDoors(options = {}) {
       stage.innerHTML = `
-        <section class="scene decision-scene">
+        <section class="${sceneClasses(options)} decision-scene">
           <div class="rule-label">Decisión</div>
           <h1 class="decision-title" aria-label="Dos puertas ante ti">
             <span class="number">2</span>
@@ -837,27 +862,35 @@
       });
     }
 
-    function renderMonster() {
+    function renderMonster(options = {}) {
       const doorText = state.chosenDoor === "izquierda" ? "Puerta izquierda" : "Puerta derecha";
       stage.innerHTML = `
-        <section class="scene monster-scene">
+        <section class="${sceneClasses(options)} monster-scene">
           <div class="selected-note">${escapeHtml(doorText)} abierta</div>
-          <div class="rule-label">Enemigo</div>
+          <div class="rule-label" data-shared="label">Enemigo</div>
           ${monsterName(state.monster)}
           <p class="mini-mark">Algo respira al otro lado.</p>
         </section>
       `;
+
+      const fleeButton = state.canFlee
+        ? '<button class="ghost-button" type="button" id="fleeButton">Huir por la otra puerta</button>'
+        : '';
+
       actions.innerHTML = `
         <button class="primary-button" type="button" id="combatButton">Entrar en combate</button>
+        ${fleeButton}
       `;
       document.getElementById("combatButton").addEventListener("click", startCombat);
+      const fleeEl = document.getElementById("fleeButton");
+      if (fleeEl) fleeEl.addEventListener("click", fleeOtherDoor);
     }
 
-    function renderCombat() {
+    function renderCombat(options = {}) {
       const result = getResult();
       stage.innerHTML = `
-        <section class="scene combat-scene">
-          <div class="rule-label">Batalla</div>
+        <section class="${sceneClasses(options)} combat-scene">
+          <div class="rule-label" data-shared="label">Batalla</div>
           ${monsterName(state.monster, "combat-monster")}
           <div class="dice-row" aria-label="Tiradas de combate">
             <div class="roll-col">
@@ -888,20 +921,389 @@
       }
     }
 
+    function prefersReducedMotion() {
+      return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
+
+    function getRect(element) {
+      if (!element) return null;
+      const rect = element.getBoundingClientRect();
+      return {
+        left: rect.left,
+        top: rect.top,
+        width: rect.width,
+        height: rect.height
+      };
+    }
+
+    function animateFromRect(element, fromRect, config = {}) {
+      if (!element || !fromRect || prefersReducedMotion()) return;
+      const toRect = element.getBoundingClientRect();
+      if (!toRect.width || !toRect.height) return;
+
+      const dx = fromRect.left - toRect.left;
+      const dy = fromRect.top - toRect.top;
+      const sx = fromRect.width / toRect.width;
+      const sy = fromRect.height / toRect.height;
+
+      element.animate([
+        {
+          transformOrigin: 'top left',
+          transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`,
+          opacity: config.fromOpacity ?? 1,
+          filter: 'blur(0px)'
+        },
+        {
+          transformOrigin: 'top left',
+          transform: 'translate(0px, 0px) scale(1, 1)',
+          opacity: 1,
+          filter: 'blur(0px)'
+        }
+      ], {
+        duration: config.duration ?? 720,
+        delay: config.delay ?? 0,
+        easing: config.easing ?? 'cubic-bezier(.22,1,.36,1)',
+        fill: 'both'
+      });
+    }
+
+    function animateIn(element, config = {}) {
+      if (!element) return;
+      if (prefersReducedMotion()) {
+        element.style.opacity = '1';
+        return;
+      }
+
+      element.animate([
+        {
+          opacity: config.fromOpacity ?? 0,
+          transform: `translateY(${config.fromY ?? 18}px) scale(${config.fromScale ?? .985})`,
+          filter: `blur(${config.fromBlur ?? 8}px)`
+        },
+        {
+          opacity: 1,
+          transform: 'translateY(0px) scale(1)',
+          filter: 'blur(0px)'
+        }
+      ], {
+        duration: config.duration ?? 600,
+        delay: config.delay ?? 0,
+        easing: config.easing ?? 'cubic-bezier(.22,1,.36,1)',
+        fill: 'both'
+      });
+    }
+
+    function animateOut(element, config = {}) {
+      if (!element) return;
+      if (prefersReducedMotion()) {
+        element.style.opacity = '0';
+        return;
+      }
+
+      return element.animate([
+        {
+          opacity: config.fromOpacity ?? 1,
+          transform: `translateY(${config.fromY ?? 0}px) scale(${config.fromScale ?? 1})`,
+          filter: 'blur(0px)'
+        },
+        {
+          opacity: config.toOpacity ?? 0,
+          transform: `translateY(${config.toY ?? -18}px) scale(${config.toScale ?? .97})`,
+          filter: `blur(${config.toBlur ?? 8}px)`
+        }
+      ], {
+        duration: config.duration ?? 360,
+        delay: config.delay ?? 0,
+        easing: config.easing ?? 'ease-out',
+        fill: 'forwards'
+      });
+    }
+
+    function createGhost(element) {
+      if (!element || prefersReducedMotion()) return null;
+      const rect = element.getBoundingClientRect();
+      const ghost = element.cloneNode(true);
+      ghost.classList.add('transition-ghost');
+      ghost.style.left = `${rect.left}px`;
+      ghost.style.top = `${rect.top}px`;
+      ghost.style.width = `${rect.width}px`;
+      ghost.style.height = `${rect.height}px`;
+      ghost.style.opacity = '1';
+      document.body.appendChild(ghost);
+      return ghost;
+    }
+
+    function removeGhost(ghost) {
+      if (!ghost) return;
+      ghost.remove();
+    }
+
+    function cleanupTransition(delay = 900) {
+      setTimeout(() => {
+        document.getElementById('app').classList.remove('is-transitioning');
+      }, prefersReducedMotion() ? 0 : delay);
+    }
+
+    function runDoorToMonsterTransition(snapshot) {
+      const note = stage.querySelector('.selected-note');
+      const label = stage.querySelector('[data-shared="label"]');
+      const noun = stage.querySelector('[data-shared="noun"]');
+      const adj = stage.querySelector('[data-shared="adj"]');
+      const mark = stage.querySelector('.mini-mark');
+      const button = actions.querySelector('.primary-button');
+      const fleeButton = actions.querySelector('#fleeButton');
+
+      animateIn(note, { delay: 70, fromY: -8, fromScale: .99, duration: 460, fromBlur: 4 });
+      animateIn(label, { delay: 120, fromY: 18, duration: 500, fromBlur: 6 });
+      animateIn(noun, { delay: 170, fromY: 28, fromScale: .955, duration: 760, fromBlur: 10 });
+      animateIn(adj, { delay: 230, fromY: 20, fromScale: .97, duration: 780, fromBlur: 10 });
+      animateIn(mark, { delay: 300, fromY: 12, fromScale: .99, duration: 520, fromBlur: 5 });
+      animateIn(button, { delay: 340, fromY: 20, fromScale: .985, duration: 620, fromBlur: 7 });
+      animateIn(fleeButton, { delay: 430, fromY: 14, fromScale: .985, duration: 540, fromBlur: 6 });
+
+      if (snapshot.selectedRect) {
+        animateFromRect(note, snapshot.selectedRect, { duration: 680, fromOpacity: .88, easing: 'cubic-bezier(.22,1,.36,1)' });
+      }
+
+      if (snapshot.sceneGhost) {
+        animateOut(snapshot.sceneGhost, { toY: -24, toScale: .985, toBlur: 8, duration: 360 });
+        setTimeout(() => removeGhost(snapshot.sceneGhost), 420);
+      }
+      if (snapshot.selectedGhost) {
+        animateOut(snapshot.selectedGhost, { toY: -18, toScale: .96, toBlur: 8, duration: 360 });
+        setTimeout(() => removeGhost(snapshot.selectedGhost), 420);
+      }
+      if (snapshot.otherGhost) {
+        animateOut(snapshot.otherGhost, { toY: 18, toScale: .98, toBlur: 8, duration: 280, delay: 20 });
+        setTimeout(() => removeGhost(snapshot.otherGhost), 360);
+      }
+
+      cleanupTransition(980);
+    }
+
+    function runCombatTransition(snapshot) {
+      const label = stage.querySelector('[data-shared="label"]');
+      const noun = stage.querySelector('[data-shared="noun"]');
+      const adj = stage.querySelector('[data-shared="adj"]');
+      const button = actions.querySelector('.primary-button');
+      const diceRow = stage.querySelector('.dice-row');
+      const resultCard = stage.querySelector('.result-card');
+      const rollLabels = stage.querySelectorAll('.roll-label, .vs');
+
+      animateFromRect(label, snapshot.label, { duration: 700 });
+      animateFromRect(noun, snapshot.noun, { duration: 760, delay: 20 });
+      animateFromRect(adj, snapshot.adj, { duration: 780, delay: 45 });
+      animateFromRect(button, snapshot.button, { duration: 720, delay: 80, fromOpacity: .96 });
+
+      animateIn(diceRow, { delay: 180, fromY: 32, fromScale: .97, duration: 700, fromBlur: 10 });
+      animateIn(resultCard, { delay: 260, fromY: 26, fromScale: .985, duration: 700, fromBlur: 8 });
+      rollLabels.forEach((el, index) => animateIn(el, { delay: 220 + (index * 35), fromY: 10, fromScale: .99, duration: 520, fromBlur: 5 }));
+
+      if (snapshot.noteGhost) {
+        snapshot.noteGhost.animate([
+          { opacity: 1, transform: 'translateY(0px) scale(1)', filter: 'blur(0px)' },
+          { opacity: 0, transform: 'translateY(-16px) scale(.98)', filter: 'blur(6px)' }
+        ], { duration: 320, easing: 'ease-out', fill: 'forwards' }).finished.finally(() => removeGhost(snapshot.noteGhost));
+      }
+
+      if (snapshot.markGhost) {
+        snapshot.markGhost.animate([
+          { opacity: .85, transform: 'translateY(0px)', filter: 'blur(0px)' },
+          { opacity: 0, transform: 'translateY(-10px)', filter: 'blur(6px)' }
+        ], { duration: 280, delay: 40, easing: 'ease-out', fill: 'forwards' }).finished.finally(() => removeGhost(snapshot.markGhost));
+      }
+
+      cleanupTransition(900);
+    }
+
+    function runFleeTransition(snapshot) {
+      const direction = snapshot.fromDoor === "izquierda" ? 1 : -1;
+      const note = stage.querySelector('.selected-note');
+      const label = stage.querySelector('[data-shared="label"]');
+      const noun = stage.querySelector('[data-shared="noun"]');
+      const adj = stage.querySelector('[data-shared="adj"]');
+      const mark = stage.querySelector('.mini-mark');
+      const combatButton = actions.querySelector('.primary-button');
+
+      if (snapshot.nameGhost) {
+        snapshot.nameGhost.animate([
+          { opacity: 1, transform: 'translateX(0px) scale(1)', filter: 'blur(0px)' },
+          { opacity: 0, transform: `translateX(${direction * -84}px) scale(.94)`, filter: 'blur(12px)' }
+        ], { duration: 430, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' })
+          .finished.finally(() => removeGhost(snapshot.nameGhost));
+      }
+
+      if (snapshot.labelGhost) {
+        snapshot.labelGhost.animate([
+          { opacity: 1, transform: 'translateY(0px) scale(1)', filter: 'blur(0px)' },
+          { opacity: 0, transform: 'translateY(-16px) scale(.98)', filter: 'blur(7px)' }
+        ], { duration: 280, easing: 'ease-out', fill: 'forwards' })
+          .finished.finally(() => removeGhost(snapshot.labelGhost));
+      }
+
+      if (snapshot.noteGhost) {
+        snapshot.noteGhost.animate([
+          { opacity: 1, transform: 'translateY(0px)', filter: 'blur(0px)' },
+          { opacity: 0, transform: `translateX(${direction * -34}px) translateY(-8px)`, filter: 'blur(6px)' }
+        ], { duration: 300, easing: 'ease-out', fill: 'forwards' })
+          .finished.finally(() => removeGhost(snapshot.noteGhost));
+      }
+
+      if (snapshot.markGhost) {
+        snapshot.markGhost.animate([
+          { opacity: .88, transform: 'translateY(0px)', filter: 'blur(0px)' },
+          { opacity: 0, transform: `translateX(${direction * -42}px) translateY(8px)`, filter: 'blur(6px)' }
+        ], { duration: 280, delay: 40, easing: 'ease-out', fill: 'forwards' })
+          .finished.finally(() => removeGhost(snapshot.markGhost));
+      }
+
+      if (snapshot.combatButtonGhost) {
+        snapshot.combatButtonGhost.animate([
+          { opacity: 1, transform: 'translateY(0px) scale(1)', filter: 'blur(0px)' },
+          { opacity: 0, transform: 'translateY(18px) scale(.985)', filter: 'blur(7px)' }
+        ], { duration: 280, easing: 'ease-out', fill: 'forwards' })
+          .finished.finally(() => removeGhost(snapshot.combatButtonGhost));
+      }
+
+      if (snapshot.fleeButtonGhost) {
+        snapshot.fleeButtonGhost.animate([
+          { opacity: 1, transform: 'translateY(0px) scale(1)', filter: 'blur(0px)' },
+          { opacity: 0, transform: `translateX(${direction * 52}px) translateY(14px) scale(.96)`, filter: 'blur(10px)' }
+        ], { duration: 360, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' })
+          .finished.finally(() => removeGhost(snapshot.fleeButtonGhost));
+      }
+
+      animateIn(note, { delay: 160, fromY: -10, fromScale: .99, duration: 520, fromBlur: 6 });
+      animateIn(label, { delay: 210, fromY: 10, fromScale: .99, duration: 520, fromBlur: 6 });
+
+      [noun, adj].forEach((element, index) => {
+        if (!element) return;
+        if (prefersReducedMotion()) {
+          element.style.opacity = '1';
+          return;
+        }
+
+        element.animate([
+          {
+            opacity: 0,
+            transform: `translateX(${direction * 92}px) translateY(${index ? 18 : 24}px) scale(${index ? .97 : .94})`,
+            filter: 'blur(12px)'
+          },
+          {
+            opacity: 1,
+            transform: 'translateX(0px) translateY(0px) scale(1)',
+            filter: 'blur(0px)'
+          }
+        ], {
+          duration: index ? 760 : 780,
+          delay: index ? 280 : 230,
+          easing: 'cubic-bezier(.22,1,.36,1)',
+          fill: 'both'
+        });
+      });
+
+      animateIn(mark, { delay: 410, fromY: 10, fromScale: .99, duration: 520, fromBlur: 5 });
+      animateIn(combatButton, { delay: 470, fromY: 22, fromScale: .985, duration: 640, fromBlur: 8 });
+
+      cleanupTransition(1120);
+    }
+
+    function runCombatToDoorsTransition(snapshot) {
+      const label = stage.querySelector('.rule-label');
+      const number = stage.querySelector('.decision-title .number');
+      const word = stage.querySelector('.decision-title .word');
+      const ante = stage.querySelector('.ante');
+      const choose = stage.querySelector('.choose-line');
+      const doorButtons = actions.querySelectorAll('[data-door]');
+
+      animateIn(label, { delay: 90, fromY: 16, duration: 460, fromBlur: 5 });
+      animateIn(number, { delay: 150, fromY: 24, fromScale: .94, duration: 760, fromBlur: 10 });
+      animateIn(word, { delay: 190, fromY: 20, fromScale: .96, duration: 720, fromBlur: 8 });
+      animateIn(ante, { delay: 250, fromY: 16, fromScale: .98, duration: 560, fromBlur: 6 });
+      animateIn(choose, { delay: 290, fromY: 14, duration: 540, fromBlur: 5 });
+      doorButtons.forEach((button, index) => {
+        animateIn(button, { delay: 360 + (index * 70), fromY: 24, fromScale: .985, duration: 620, fromBlur: 8 });
+      });
+
+      if (snapshot.sceneGhost) {
+        animateOut(snapshot.sceneGhost, { toY: -28, toScale: .985, toBlur: 9, duration: 340 });
+        setTimeout(() => removeGhost(snapshot.sceneGhost), 420);
+      }
+      if (snapshot.actionGhost) {
+        animateOut(snapshot.actionGhost, { toY: 18, toScale: .98, toBlur: 8, duration: 300 });
+        setTimeout(() => removeGhost(snapshot.actionGhost), 360);
+      }
+
+      cleanupTransition(980);
+    }
+
     function chooseDoor(door) {
+      const app = document.getElementById('app');
+      const doorButtons = Array.from(actions.querySelectorAll('[data-door]'));
+      const selectedButton = doorButtons.find(button => button.dataset.door === door);
+      const otherButton = doorButtons.find(button => button.dataset.door !== door);
+
+      const snapshot = {
+        selectedRect: getRect(selectedButton),
+        selectedGhost: createGhost(selectedButton),
+        otherGhost: createGhost(otherButton),
+        sceneGhost: createGhost(stage.querySelector('.decision-scene'))
+      };
+
+      app.classList.add('is-transitioning');
+
       state.chosenDoor = door;
       state.monster = generateMonster();
+      state.canFlee = true;
       state.screen = "monster";
-      render();
+      render({ noSceneAnimation: true });
+      requestAnimationFrame(() => runDoorToMonsterTransition(snapshot));
+    }
+
+    function fleeOtherDoor() {
+      if (!state.canFlee) return;
+
+      const app = document.getElementById('app');
+      const snapshot = {
+        fromDoor: state.chosenDoor,
+        noteGhost: createGhost(stage.querySelector('.selected-note')),
+        labelGhost: createGhost(stage.querySelector('[data-shared="label"]')),
+        nameGhost: createGhost(stage.querySelector('.monster-name')),
+        markGhost: createGhost(stage.querySelector('.mini-mark')),
+        combatButtonGhost: createGhost(actions.querySelector('.primary-button')),
+        fleeButtonGhost: createGhost(actions.querySelector('#fleeButton'))
+      };
+
+      app.classList.add('is-transitioning');
+
+      state.chosenDoor = state.chosenDoor === "izquierda" ? "derecha" : "izquierda";
+      state.monster = generateMonster();
+      state.canFlee = false;
+      render({ noSceneAnimation: true });
+      requestAnimationFrame(() => runFleeTransition(snapshot));
     }
 
     function startCombat() {
+      const app = document.getElementById('app');
+      const snapshot = {
+        label: getRect(stage.querySelector('[data-shared="label"]')),
+        noun: getRect(stage.querySelector('[data-shared="noun"]')),
+        adj: getRect(stage.querySelector('[data-shared="adj"]')),
+        button: getRect(actions.querySelector('.primary-button')),
+        noteGhost: createGhost(stage.querySelector('.selected-note')),
+        markGhost: createGhost(stage.querySelector('.mini-mark'))
+      };
+
+      app.classList.add('is-transitioning');
+
       state.screen = "combat";
       state.playerRoll = null;
       state.enemyRoll = null;
       state.rolled = false;
       state.rolling = false;
-      render();
+      state.canFlee = false;
+      render({ noSceneAnimation: true });
+      requestAnimationFrame(() => runCombatTransition(snapshot));
     }
 
     function rollDice() {
@@ -960,6 +1362,14 @@
     }
 
     function nextRoom() {
+      const app = document.getElementById('app');
+      const snapshot = {
+        sceneGhost: createGhost(stage.querySelector('.combat-scene')),
+        actionGhost: createGhost(actions.querySelector('.primary-button'))
+      };
+
+      app.classList.add('is-transitioning');
+
       state.room += 1;
       state.screen = "doors";
       state.chosenDoor = "";
@@ -968,7 +1378,9 @@
       state.enemyRoll = null;
       state.rolled = false;
       state.rolling = false;
-      render();
+      state.canFlee = false;
+      render({ noSceneAnimation: true });
+      requestAnimationFrame(() => runCombatToDoorsTransition(snapshot));
     }
 
     document.addEventListener("keydown", event => {
