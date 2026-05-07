@@ -1386,6 +1386,27 @@
       .result-card { padding: 10px 0; }
     }
 
+
+    /* v6 refinements */
+    .decision-scene {
+      display: grid;
+      justify-items: center;
+    }
+
+    .decision-title {
+      width: fit-content;
+      max-width: 100%;
+      grid-template-columns: auto auto;
+      justify-content: center;
+      justify-items: start;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .decision-title .word {
+      justify-self: start;
+    }
+
   </style>
 </head>
 <body>
@@ -1590,7 +1611,7 @@
       const previousText = counter.textContent;
       counter.textContent = nextText;
 
-      if (previousText && previousText !== nextText && !prefersReducedMotion()) {
+      if (previousText && previousText !== nextText && !useSimpleTransitions()) {
         counter.animate([
           { transform: "translateY(0) scale(1)", letterSpacing: ".15em", opacity: .65 },
           { transform: "translateY(-1px) scale(1.18)", letterSpacing: ".22em", opacity: 1 },
@@ -1729,6 +1750,17 @@
 
     function prefersReducedMotion() {
       return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
+
+    function isIOSSafari() {
+      const ua = navigator.userAgent || '';
+      const isIOS = /iP(hone|ad|od)/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|OPT\//.test(ua);
+      return isIOS && isSafari;
+    }
+
+    function useSimpleTransitions() {
+      return prefersReducedMotion() || isIOSSafari();
     }
 
     function getRect(element) {
@@ -2044,6 +2076,15 @@
     }
 
     function chooseDoor(door) {
+      if (useSimpleTransitions()) {
+        state.chosenDoor = door;
+        state.monster = generateMonster();
+        state.canFlee = true;
+        state.screen = "monster";
+        render();
+        return;
+      }
+
       const app = document.getElementById('app');
       const doorButtons = Array.from(actions.querySelectorAll('[data-door]'));
       const selectedButton = doorButtons.find(button => button.dataset.door === door);
@@ -2069,6 +2110,14 @@
     function fleeOtherDoor() {
       if (!state.canFlee) return;
 
+      if (useSimpleTransitions()) {
+        state.chosenDoor = state.chosenDoor === "izquierda" ? "derecha" : "izquierda";
+        state.monster = generateMonster();
+        state.canFlee = false;
+        render();
+        return;
+      }
+
       const app = document.getElementById('app');
       const snapshot = {
         fromDoor: state.chosenDoor,
@@ -2090,6 +2139,19 @@
     }
 
     function startCombat() {
+      if (useSimpleTransitions()) {
+        state.screen = "combat";
+        state.combatPlayerLevel = state.playerLevel;
+        state.combatMonsterLevel = state.monster.level;
+        state.playerRoll = null;
+        state.enemyRoll = null;
+        state.rolled = false;
+        state.rolling = false;
+        state.canFlee = false;
+        render();
+        return;
+      }
+
       const app = document.getElementById('app');
       const snapshot = {
         label: getRect(stage.querySelector('[data-shared="label"]')),
@@ -2202,6 +2264,22 @@
     }
 
     function nextRoom() {
+      if (useSimpleTransitions()) {
+        state.room += 1;
+        state.screen = "doors";
+        state.chosenDoor = "";
+        state.monster = null;
+        state.playerRoll = null;
+        state.enemyRoll = null;
+        state.rolled = false;
+        state.rolling = false;
+        state.canFlee = false;
+        state.combatPlayerLevel = null;
+        state.combatMonsterLevel = null;
+        render();
+        return;
+      }
+
       const app = document.getElementById('app');
       const snapshot = {
         sceneGhost: createGhost(stage.querySelector('.combat-scene')),
