@@ -1145,8 +1145,9 @@
 
     .dice-row,
     .totals-row {
-      width: min(100%, 445px);
-      gap: clamp(8px, 2.35vw, 14px);
+      display: grid;
+      width: min(100%, 438px);
+      gap: clamp(8px, 2.1vw, 13px);
       grid-template-columns: 1fr auto 1fr;
       align-items: start;
       margin-left: auto;
@@ -1154,7 +1155,7 @@
     }
 
     .totals-row {
-      margin-top: clamp(10px, 1.5dvh, 14px);
+      margin-top: clamp(8px, 1.15dvh, 11px);
     }
 
     .totals-gap {
@@ -1188,9 +1189,9 @@
     }
 
     .stat-card {
-      width: min(100%, 150px);
+      width: min(100%, 138px);
       margin: 0 auto;
-      padding: 14px 16px 12px;
+      padding: 11px 13px 10px;
       border-radius: 12px;
       background: var(--panel);
       box-shadow: inset 0 0 0 1px rgba(0,0,0,.045);
@@ -1222,15 +1223,15 @@
 
     .stat-divider {
       height: 1px;
-      background: rgba(0,0,0,.22);
-      margin: 11px 0 10px;
+      background: rgba(0,0,0,.20);
+      margin: 9px 0 8px;
     }
 
     .stat-total {
       font-family: var(--display);
-      font-size: clamp(2.9rem, 14.2vw, 5rem);
+      font-size: clamp(2.45rem, 11.8vw, 4.3rem);
       font-weight: 1000;
-      line-height: .8;
+      line-height: .82;
       letter-spacing: -.065em;
     }
 
@@ -1243,8 +1244,8 @@
     .result-card {
       position: relative;
       width: min(100%, 430px);
-      margin-top: clamp(16px, 2.2dvh, 22px);
-      padding: 16px 0;
+      margin-top: clamp(12px, 1.7dvh, 16px);
+      padding: 12px 0;
       min-height: 0;
       border: 0;
       background: transparent;
@@ -1289,10 +1290,10 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 14px;
-      min-height: clamp(68px, 9dvh, 84px);
-      margin: 12px 0;
-      padding: 14px 20px;
+      gap: 12px;
+      min-height: clamp(58px, 7.4dvh, 70px);
+      margin: 10px 0;
+      padding: 12px 18px;
       border-radius: 12px;
       background: var(--panel);
       box-shadow: inset 0 0 0 1px rgba(0,0,0,.035);
@@ -1327,7 +1328,7 @@
 
     .result-main {
       margin: 0;
-      font-size: clamp(.98rem, 4.6vw, 2rem);
+      font-size: clamp(.92rem, 4.2vw, 1.72rem);
       font-family: var(--display);
       letter-spacing: .11em;
       font-weight: 1000;
@@ -1372,17 +1373,17 @@
       .combat-monster .monster-adj { font-size: clamp(1.26rem, 6.1vw, 2.55rem); }
 
       .die { width: min(100%, 128px); font-size: clamp(3.1rem, 16.4vw, 6.2rem); }
-      .stat-card { width: min(100%, 136px); padding: 12px 13px 10px; }
-      .result-card { margin-top: 11px; }
-      .result-shell { min-height: 60px; gap: 12px; }
+      .stat-card { width: min(100%, 128px); padding: 10px 11px 9px; }
+      .result-card { margin-top: 10px; }
+      .result-shell { min-height: 54px; gap: 10px; }
     }
 
     @media (max-height: 620px) {
       .combat-monster .monster-adj { display: block; }
       .die { width: min(100%, 112px); }
-      .totals-row { margin-top: 8px; }
-      .stat-card { width: min(100%, 122px); padding: 10px 11px 9px; }
-      .result-card { padding: 12px 0; }
+      .totals-row { margin-top: 7px; }
+      .stat-card { width: min(100%, 112px); padding: 9px 9px 8px; }
+      .result-card { padding: 10px 0; }
     }
 
   </style>
